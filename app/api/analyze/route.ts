@@ -90,20 +90,21 @@ async function persistProjectForUploadedDocuments({
   description: string;
   profile: ProjectProfile;
 }) {
+  const project = {
+    id: projectId,
+    name: description || profile.businessType || "Uploaded project",
+    location: profile.location.city,
+    projectType: profile.activities.includes("construction")
+      ? "Construction"
+      : profile.businessType,
+    use: profile.businessType,
+    sensitiveFactors: profile.considerations,
+    profile,
+    createdAt: new Date().toISOString(),
+  };
+
   await db.collection("projects").doc(projectId).set(
-    {
-      id: projectId,
-      name: description || profile.businessType || "Uploaded project",
-      location: profile.location.city,
-      borough: profile.location.borough ?? undefined,
-      projectType: profile.activities.includes("construction")
-        ? "Construction"
-        : profile.businessType,
-      use: profile.businessType,
-      sensitiveFactors: profile.considerations,
-      profile,
-      createdAt: new Date().toISOString(),
-    },
+    profile.location.borough ? { ...project, borough: profile.location.borough } : project,
     { merge: true },
   );
 }

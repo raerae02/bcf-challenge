@@ -269,6 +269,12 @@ export function buildSubclauseEmbeddingText(
     .join("\n");
 }
 
+function definedFields<T extends Record<string, unknown>>(value: T) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== undefined),
+  );
+}
+
 export async function createDocumentWithSubclauseVectors({
   projectId,
   file,
@@ -285,7 +291,7 @@ export async function createDocumentWithSubclauseVectors({
   );
   const batch = db.batch();
 
-  batch.set(documentRef, {
+  batch.set(documentRef, definedFields({
     id: documentRef.id,
     projectId,
     fileName: file.filename,
@@ -295,7 +301,7 @@ export async function createDocumentWithSubclauseVectors({
     text: file.inlineText ?? undefined,
     structured: analyzedDocument,
     createdAt: now,
-  });
+  }));
 
   for (const [chunkIndex, { clause, path }] of flatClauses.entries()) {
     const chunkRef = db.collection("documentChunks").doc();

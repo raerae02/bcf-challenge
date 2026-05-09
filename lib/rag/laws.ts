@@ -48,6 +48,22 @@ function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
+function stripUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map(stripUndefined) as T;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, entry]) => entry !== undefined)
+        .map(([key, entry]) => [key, stripUndefined(entry)]),
+    ) as T;
+  }
+
+  return value;
+}
+
 function tokenizeTags(text: string) {
   const normalized = text.toLowerCase();
   const tags: string[] = [];
@@ -141,7 +157,7 @@ export async function createStructuredLaw(input: RawLawInput): Promise<LawUpdate
     createdAt: new Date().toISOString(),
   };
 
-  await lawRef.set(law);
+  await lawRef.set(stripUndefined(law));
 
   return law;
 }
