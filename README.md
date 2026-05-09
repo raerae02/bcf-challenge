@@ -34,3 +34,32 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Permit Radar AI RAG Setup
+
+The backend RAG layer keeps storage, retrieval, and reasoning separate:
+
+User uploads document
+-> app chunks text
+-> app generates embeddings
+-> chunks are stored in Firestore `documentChunks`
+-> law or regulatory update is added
+-> app generates a law embedding
+-> Firestore Vector Search retrieves relevant chunks
+-> cosine similarity fallback runs when a vector index is unavailable
+-> selected context can be passed to Gemini
+
+The vector database retrieves semantically relevant chunks. Gemini should only reason over those selected chunks and return structured analysis. The application is responsible for storing documents, laws, chunks, and any dashboard notifications.
+
+Environment variables used by the RAG setup:
+
+```bash
+GOOGLE_CLOUD_PROJECT=
+GOOGLE_CLOUD_LOCATION=us-central1
+GEMINI_API_KEY=
+FIREBASE_PROJECT_ID=
+FIREBASE_SERVICE_ACCOUNT_JSON=
+MOCK_EMBEDDINGS=false
+```
+
+For local demos, set `MOCK_EMBEDDINGS=true` to use deterministic embeddings without calling Gemini.
