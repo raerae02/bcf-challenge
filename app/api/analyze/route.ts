@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { callGeminiJSON, type FileInput } from "@/lib/gemini";
 import { getRegulations, getAlerts } from "@/lib/data";
 import { matchRegulations, matchAlerts } from "@/lib/matcher";
@@ -13,7 +13,6 @@ import type {
   AnalyzedRegulation,
   RegulatorySnapshot,
 } from "@/lib/types";
-import type { StructuredDocument } from "@/lib/rag/types";
 
 const EXTRACT_PROFILE_PROMPT = `You are an expert in Quebec and Montreal business regulations.
 
@@ -143,37 +142,35 @@ export async function POST(req: NextRequest) {
       geminiFiles,
     );
 
-    let analyzedDocuments: StructuredDocument[] = [];
-    const persistedDocuments: { filename: string; documentId: string; chunkCount: number }[] = [];
+    if (files.length > 0 && projectId) {
+      await persistProjectForUploadedDocuments({ projectId, description, profile });
 
-    if (files.length > 0) {
-      analyzedDocuments = await analyzeDocumentStructure({
-        combinedPrompt,
-        files,
-        geminiFiles,
-      });
-
-      if (projectId) {
-        await persistProjectForUploadedDocuments({ projectId, description, profile });
-
-        for (const [index, analyzedDocument] of analyzedDocuments.entries()) {
-          const stored = await createDocumentWithSubclauseVectors({
-            projectId,
-            file: files[index],
-            analyzedDocument,
+      after(async () => {
+        try {
+          const analyzedDocuments = await analyzeDocumentStructure({
+            combinedPrompt,
+            files,
+            geminiFiles,
           });
-          persistedDocuments.push({
-            filename: analyzedDocument.filename,
-            documentId: stored.documentId,
-            chunkCount: stored.chunkCount,
-          });
+
+          for (const [index, analyzedDocument] of analyzedDocuments.entries()) {
+            await createDocumentWithSubclauseVectors({
+              projectId,
+              file: files[index],
+              analyzedDocument,
+            });
+          }
+        } catch (error) {
+          console.error("Document indexing error:", error);
         }
-      }
+      });
     }
 
-    const allRegulations = await getRegulations();
+    const [allRegulations, allAlerts] = await Promise.all([
+      getRegulations(),
+      getAlerts(),
+    ]);
     const matched = matchRegulations(profile, allRegulations);
-    const allAlerts = await getAlerts();
     const matchedAlerts = matchAlerts(profile, allAlerts);
 
     const analyzedRules: AnalyzedRegulation[] = matched.map((r) => ({
@@ -234,9 +231,7 @@ export async function POST(req: NextRequest) {
           ? "Medium"
           : "Low";
 
-    const snapshot: RegulatorySnapshot & {
-      persistedDocuments?: { filename: string; documentId: string; chunkCount: number }[];
-    } = {
+    const snapshot: RegulatorySnapshot = {
       projectProfile: profile,
       totalApplicableRules: analyzedRules.length,
       riskOverview,
@@ -244,8 +239,6 @@ export async function POST(req: NextRequest) {
       recentAlerts: matchedAlerts,
       riskReport,
       attachedFilesProcessed: files.map((f) => ({ filename: f.filename })),
-      analyzedDocuments,
-      ...(persistedDocuments.length > 0 ? { persistedDocuments } : {}),
     };
 
     return NextResponse.json(snapshot);
