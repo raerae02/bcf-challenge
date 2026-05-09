@@ -9,7 +9,7 @@ import type {
   StructuredLawUpdate,
 } from "@/lib/rag/types";
 
-const ANALYZE_SUBCLAUSE_IMPACT_PROMPT = `You are Permit Radar AI, a construction permit and compliance analyst.
+const ANALYZE_SUBCLAUSE_IMPACT_PROMPT = `You are Regulation Radar AI, a construction permit and compliance analyst.
 
 A law, regulation, municipal bylaw, permit rule, or compliance requirement has changed. Determine exactly which retrieved document subclauses are likely affected.
 
@@ -58,9 +58,13 @@ function urgencyRank(urgency: ImpactUrgency) {
   return { Low: 1, Medium: 2, High: 3, Critical: 4 }[urgency];
 }
 
-function maxUrgency(values: ImpactUrgency[], fallback: ImpactUrgency): ImpactUrgency {
+function maxUrgency(
+  values: ImpactUrgency[],
+  fallback: ImpactUrgency,
+): ImpactUrgency {
   return values.reduce(
-    (current, next) => (urgencyRank(next) > urgencyRank(current) ? next : current),
+    (current, next) =>
+      urgencyRank(next) > urgencyRank(current) ? next : current,
     fallback,
   );
 }
@@ -98,13 +102,16 @@ function fallbackImpactAnalysis({
   const lawText = JSON.stringify(structured);
   const affected = chunks
     .map((chunk) => {
-      const overlap = tokenOverlap(lawText, [
-        chunk.text,
-        chunk.clauseTitle,
-        chunk.keyObligations?.join(" "),
-        chunk.riskSignals?.join(" "),
-        chunk.tags?.join(" "),
-      ].join(" "));
+      const overlap = tokenOverlap(
+        lawText,
+        [
+          chunk.text,
+          chunk.clauseTitle,
+          chunk.keyObligations?.join(" "),
+          chunk.riskSignals?.join(" "),
+          chunk.tags?.join(" "),
+        ].join(" "),
+      );
       const score = (chunk.score ?? 0) + overlap / 10;
 
       if (score < 0.25) {
@@ -137,11 +144,18 @@ function fallbackImpactAnalysis({
       };
     })
     .filter(Boolean) as {
+    documentId: string;
+    fileName: string;
+    subclause: AffectedSubclause;
+  }[];
+  const grouped = new Map<
+    string,
+    {
       documentId: string;
       fileName: string;
-      subclause: AffectedSubclause;
-    }[];
-  const grouped = new Map<string, { documentId: string; fileName: string; affectedSubclauses: AffectedSubclause[] }>();
+      affectedSubclauses: AffectedSubclause[];
+    }
+  >();
 
   for (const item of affected) {
     const key = item.documentId;
@@ -168,8 +182,8 @@ function fallbackImpactAnalysis({
         ? `${law.title} may affect ${affected.length} subclause${affected.length === 1 ? "" : "s"}`
         : `${law.title} scanned with no clear subclause impact`,
       message: affectedDocuments.length
-        ? `Permit Radar found likely subclause-level impacts for ${project.name}.`
-        : `Permit Radar did not find a clear relationship between this update and the retrieved subclauses.`,
+        ? `Regulation Radar found likely subclause-level impacts for ${project.name}.`
+        : `Regulation Radar did not find a clear relationship between this update and the retrieved subclauses.`,
       urgency,
     },
   };

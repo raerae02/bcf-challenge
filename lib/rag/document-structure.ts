@@ -2,12 +2,9 @@ import { db } from "@/lib/firebase-admin";
 import { generateEmbedding } from "@/lib/embeddings";
 import { callGeminiJSON, type FileInput } from "@/lib/gemini";
 import type { ProcessedFile } from "@/lib/fileParser";
-import type {
-  StructuredClause,
-  StructuredDocument,
-} from "@/lib/rag/types";
+import type { StructuredClause, StructuredDocument } from "@/lib/rag/types";
 
-export const EXTRACT_DOCUMENT_STRUCTURE_PROMPT = `You are Permit Radar AI, a legal-tech document analyst for Quebec construction, permitting, zoning, and compliance projects.
+export const EXTRACT_DOCUMENT_STRUCTURE_PROMPT = `You are Regulation Radar AI, a legal-tech document analyst for Quebec construction, permitting, zoning, and compliance projects.
 
 Analyze every attached or inlined project document and separate it into sections, clauses, subclauses, paragraphs, or schedules. The goal is to make later regulatory updates cite the exact sub-clause or subsection that may be affected.
 
@@ -54,7 +51,10 @@ type DocumentStructureResponse = {
 };
 
 export function normalizeClauseId(filename: string, index: number) {
-  return `${filename.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()}-${index + 1}`;
+  return `${filename
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase()}-${index + 1}`;
 }
 
 function safeArray(value: unknown): string[] {
@@ -175,8 +175,9 @@ export function normalizeDocumentStructure(
 
   return files.map((file, index) => {
     const extracted =
-      result.documents.find((document) => document.filename === file.filename) ??
-      result.documents[index];
+      result.documents.find(
+        (document) => document.filename === file.filename,
+      ) ?? result.documents[index];
     const fallback = fallbacks[index];
 
     if (!extracted) {
@@ -191,7 +192,10 @@ export function normalizeDocumentStructure(
       clauses:
         Array.isArray(extracted.clauses) && extracted.clauses.length > 0
           ? extracted.clauses.map((clause, clauseIndex) =>
-              normalizeClause(clause, normalizeClauseId(file.filename, clauseIndex)),
+              normalizeClause(
+                clause,
+                normalizeClauseId(file.filename, clauseIndex),
+              ),
             )
           : fallback.clauses,
     };
@@ -211,7 +215,9 @@ export async function analyzeDocumentStructure({
     combinedPrompt,
     "",
     "Attached file order:",
-    ...files.map((file, index) => `${index + 1}. ${file.filename} (${file.mimeType})`),
+    ...files.map(
+      (file, index) => `${index + 1}. ${file.filename} (${file.mimeType})`,
+    ),
   ].join("\n");
 
   try {
@@ -287,21 +293,27 @@ export async function createDocumentWithSubclauseVectors({
   const now = new Date().toISOString();
   const documentRef = db.collection("documents").doc();
   const flatClauses = flattenDocumentClauses(analyzedDocument).filter(
-    ({ clause }) => clause.text.trim().length > 0 || clause.title.trim().length > 0,
+    ({ clause }) =>
+      clause.text.trim().length > 0 || clause.title.trim().length > 0,
   );
   const batch = db.batch();
 
-  batch.set(documentRef, definedFields({
-    id: documentRef.id,
-    projectId,
-    fileName: file.filename,
-    type: analyzedDocument.documentType,
-    summary: analyzedDocument.summary,
-    tags: Array.from(new Set(flatClauses.flatMap(({ clause }) => clause.tags))),
-    text: file.inlineText ?? undefined,
-    structured: analyzedDocument,
-    createdAt: now,
-  }));
+  batch.set(
+    documentRef,
+    definedFields({
+      id: documentRef.id,
+      projectId,
+      fileName: file.filename,
+      type: analyzedDocument.documentType,
+      summary: analyzedDocument.summary,
+      tags: Array.from(
+        new Set(flatClauses.flatMap(({ clause }) => clause.tags)),
+      ),
+      text: file.inlineText ?? undefined,
+      structured: analyzedDocument,
+      createdAt: now,
+    }),
+  );
 
   for (const [chunkIndex, { clause, path }] of flatClauses.entries()) {
     const chunkRef = db.collection("documentChunks").doc();

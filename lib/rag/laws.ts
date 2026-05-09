@@ -1,9 +1,13 @@
 import { db } from "@/lib/firebase-admin";
 import { generateEmbedding } from "@/lib/embeddings";
 import { callGeminiJSON } from "@/lib/gemini";
-import type { ImpactUrgency, LawUpdate, StructuredLawUpdate } from "@/lib/rag/types";
+import type {
+  ImpactUrgency,
+  LawUpdate,
+  StructuredLawUpdate,
+} from "@/lib/rag/types";
 
-const STRUCTURE_LAW_PROMPT = `You are Permit Radar AI, a Quebec construction permit and compliance analyst.
+const STRUCTURE_LAW_PROMPT = `You are Regulation Radar AI, a Quebec construction permit and compliance analyst.
 
 Convert the raw law, regulation, municipal bylaw, permit rule, or compliance update into structured JSON for retrieval and impact analysis.
 
@@ -70,11 +74,13 @@ function tokenizeTags(text: string) {
   const normalized = text.toLowerCase();
   const tags: string[] = [];
 
-  if (normalized.includes("green") || normalized.includes("landscap")) tags.push("green_space");
+  if (normalized.includes("green") || normalized.includes("landscap"))
+    tags.push("green_space");
   if (normalized.includes("site plan")) tags.push("site_plan");
   if (normalized.includes("permit")) tags.push("permit", "permit_delay");
   if (normalized.includes("residential")) tags.push("residential");
-  if (normalized.includes("storey") || normalized.includes("storeys")) tags.push("multi_storey");
+  if (normalized.includes("storey") || normalized.includes("storeys"))
+    tags.push("multi_storey");
   if (normalized.includes("fire")) tags.push("fire_safety");
   if (normalized.includes("zoning")) tags.push("zoning");
   if (normalized.includes("contract")) tags.push("contract_risk");
@@ -84,7 +90,14 @@ function tokenizeTags(text: string) {
 }
 
 export function fallbackStructuredLaw(input: RawLawInput): StructuredLawUpdate {
-  const combined = [input.title, input.category, input.summary, input.risk, input.oldText, input.newText]
+  const combined = [
+    input.title,
+    input.category,
+    input.summary,
+    input.risk,
+    input.oldText,
+    input.newText,
+  ]
     .filter(Boolean)
     .join(" ");
   const keywords = tokenizeTags(combined);
@@ -101,14 +114,18 @@ export function fallbackStructuredLaw(input: RawLawInput): StructuredLawUpdate {
     obligations: [input.newText],
     affectedProjectFeatures: keywords,
     keywords,
-    legalRiskThemes: input.risk ? [input.risk] : ["permit or compliance impact"],
+    legalRiskThemes: input.risk
+      ? [input.risk]
+      : ["permit or compliance impact"],
     oldText: input.oldText,
     newText: input.newText,
     risk: input.risk,
   };
 }
 
-export async function structureLawWithGemini(input: RawLawInput): Promise<StructuredLawUpdate> {
+export async function structureLawWithGemini(
+  input: RawLawInput,
+): Promise<StructuredLawUpdate> {
   try {
     return await callGeminiJSON<StructuredLawUpdate>(
       JSON.stringify(input, null, 2),
@@ -141,11 +158,17 @@ export function buildStructuredLawEmbeddingText(law: StructuredLawUpdate) {
     .join("\n\n");
 }
 
-export async function createStructuredLaw(input: RawLawInput): Promise<LawUpdate> {
+export async function createStructuredLaw(
+  input: RawLawInput,
+): Promise<LawUpdate> {
   const structured = await structureLawWithGemini(input);
   const structuredWithSource = { ...structured, sourceUrl: input.sourceUrl };
-  const embedding = await generateEmbedding(buildStructuredLawEmbeddingText(structuredWithSource));
-  const lawRef = input.seedId ? db.collection("laws").doc(input.seedId) : db.collection("laws").doc();
+  const embedding = await generateEmbedding(
+    buildStructuredLawEmbeddingText(structuredWithSource),
+  );
+  const lawRef = input.seedId
+    ? db.collection("laws").doc(input.seedId)
+    : db.collection("laws").doc();
   const law: LawUpdate = {
     id: lawRef.id,
     seedId: input.seedId,

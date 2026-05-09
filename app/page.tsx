@@ -13,11 +13,7 @@ import {
   type SavedProject,
   type SavedProjectSnapshot,
 } from "@/lib/projects";
-import {
-  deleteFilesByPrefix,
-  fileKey,
-  storeFile,
-} from "@/lib/file-storage";
+import { deleteFilesByPrefix, fileKey, storeFile } from "@/lib/file-storage";
 import type { ImpactNotification } from "@/lib/rag/types";
 
 type Stage = "idle" | "analyzing" | "ready";
@@ -257,7 +253,7 @@ export default function Home() {
       </main>
       <footer className="border-t border-border py-6">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-4 text-xs text-muted-foreground sm:flex-row sm:px-6">
-          <span>© Permit Radar AI · BCF Hackathon prototype</span>
+          <span>© Regulation Radar AI · BCF Hackathon prototype</span>
           <span>AI-generated legal information — not legal advice.</span>
         </div>
       </footer>

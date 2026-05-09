@@ -115,7 +115,7 @@ export function Hero({
         </h1>
         <p className="mt-5 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg">
           Describe your construction or business project, or upload your
-          documents (lease, business plan, quote). Permit Radar AI surfaces
+          documents (lease, business plan, quote). Regulation Radar AI surfaces
           required permits, applicable regulations, and recent changes — with a
           risk score and concrete actions.
         </p>
@@ -192,9 +192,7 @@ export function Hero({
                     className="flex items-center gap-2 rounded-lg bg-muted/50 px-2.5 py-1.5 text-xs"
                   >
                     <FileText className="size-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate font-medium">
-                      {f.file.name}
-                    </span>
+                    <span className="truncate font-medium">{f.file.name}</span>
                     <span className="text-muted-foreground">
                       ({(f.file.size / 1024).toFixed(0)} KB)
                     </span>

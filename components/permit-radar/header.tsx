@@ -20,7 +20,7 @@ export function AppHeader({ onReset, showReset }: HeaderProps) {
           </span>
           <span className="flex flex-col leading-tight">
             <span className="font-heading text-sm font-semibold tracking-tight">
-              Permit Radar AI
+              Regulation Radar AI
             </span>
             <span className="text-xs text-muted-foreground">
               Smart permit and compliance monitoring
