@@ -1,4 +1,4 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { callGeminiJSON, type FileInput } from "@/lib/gemini";
 import { getRegulations, getAlerts } from "@/lib/data";
 import { matchRegulations, matchAlerts } from "@/lib/matcher";
@@ -146,28 +146,24 @@ export async function POST(req: NextRequest) {
       geminiFiles,
     );
 
-    if (files.length > 0 && projectId) {
+    if (projectId) {
       await persistProjectForUploadedDocuments({ projectId, description, profile });
+    }
 
-      after(async () => {
-        try {
-          const analyzedDocuments = await analyzeDocumentStructure({
-            combinedPrompt,
-            files,
-            geminiFiles,
-          });
-
-          for (const [index, analyzedDocument] of analyzedDocuments.entries()) {
-            await createDocumentWithSubclauseVectors({
-              projectId,
-              file: files[index],
-              analyzedDocument,
-            });
-          }
-        } catch (error) {
-          console.error("Document indexing error:", error);
-        }
+    if (files.length > 0 && projectId) {
+      const analyzedDocuments = await analyzeDocumentStructure({
+        combinedPrompt,
+        files,
+        geminiFiles,
       });
+
+      for (const [index, analyzedDocument] of analyzedDocuments.entries()) {
+        await createDocumentWithSubclauseVectors({
+          projectId,
+          file: files[index],
+          analyzedDocument,
+        });
+      }
     }
 
     const [allRegulations, allAlerts] = await Promise.all([

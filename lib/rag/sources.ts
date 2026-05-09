@@ -320,7 +320,7 @@ export async function findRelevantChunksForLaw({
     topK: limit * 3,
   });
 
-  if (vectorSearchResults) {
+  if (vectorSearchResults && vectorSearchResults.length > 0) {
     return rerankWithHybridScore({
       chunks: vectorSearchResults,
       lawText,

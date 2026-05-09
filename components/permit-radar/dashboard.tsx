@@ -46,6 +46,7 @@ import type {
   ProjectProfile,
   RegulatorySnapshot,
 } from "@/lib/types";
+import type { ImpactNotification } from "@/lib/rag/types";
 import type { SavedFile, SavedProject } from "@/lib/projects";
 import { getFile } from "@/lib/file-storage";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ type AnalyzedSnapshot = RegulatorySnapshot & {
 
 type DashboardProps = {
   snapshot: AnalyzedSnapshot;
+  notifications: ImpactNotification[];
   prompt: string;
   projects: SavedProject[];
   activeId: string;
@@ -74,6 +76,7 @@ type DashboardProps = {
 
 export function Dashboard({
   snapshot,
+  notifications,
   prompt,
   projects,
   activeId,
@@ -84,6 +87,14 @@ export function Dashboard({
 }: DashboardProps) {
   const { projectProfile, rules, recentAlerts, riskReport, riskOverview } =
     snapshot;
+  const alertCount = recentAlerts.length + notifications.length;
+  const overallWithNotifications = notifications.reduce<RiskLevel>(
+    (current, notification) =>
+      RISK_ORDER[notification.urgency] < RISK_ORDER[current]
+        ? notification.urgency
+        : current,
+    riskOverview,
+  );
 
   const sortedRules = useMemo(
     () =>
@@ -108,8 +119,8 @@ export function Dashboard({
         profile={projectProfile}
         prompt={prompt}
         ruleCount={rules.length}
-        alertCount={recentAlerts.length}
-        overall={riskOverview}
+        alertCount={alertCount}
+        overall={overallWithNotifications}
         savedFiles={projects.find((p) => p.id === activeId)?.files ?? []}
         attachedFiles={snapshot.attachedFilesProcessed}
       />
@@ -126,9 +137,9 @@ export function Dashboard({
           <TabsTrigger value="alerts">
             <Bell className="size-4" />
             Alerts
-            {recentAlerts.length > 0 ? (
+            {alertCount > 0 ? (
               <Badge variant="destructive" className="ml-1">
-                {recentAlerts.length}
+                {alertCount}
               </Badge>
             ) : null}
           </TabsTrigger>
@@ -146,10 +157,10 @@ export function Dashboard({
           <SnapshotView rules={sortedRules} />
         </TabsContent>
         <TabsContent value="alerts" className="mt-6">
-          <AlertsView alerts={recentAlerts} />
+          <AlertsView alerts={recentAlerts} notifications={notifications} />
         </TabsContent>
         <TabsContent value="risk" className="mt-6">
-          <RiskReportView report={riskReport} overall={riskOverview} />
+          <RiskReportView report={riskReport} overall={overallWithNotifications} />
         </TabsContent>
         <TabsContent value="chat" className="mt-6">
           <ChatView profile={projectProfile} />
@@ -688,23 +699,117 @@ function MetaItem({
   );
 }
 
-function AlertsView({ alerts }: { alerts: Alert[] }) {
+function AlertsView({
+  alerts,
+  notifications,
+}: {
+  alerts: Alert[];
+  notifications: ImpactNotification[];
+}) {
   const sorted = useMemo(
     () =>
       [...alerts].sort((a, b) => RISK_ORDER[a.urgency] - RISK_ORDER[b.urgency]),
     [alerts],
   );
+  const sortedNotifications = useMemo(
+    () =>
+      [...notifications].sort(
+        (a, b) => RISK_ORDER[a.urgency] - RISK_ORDER[b.urgency],
+      ),
+    [notifications],
+  );
 
-  if (sorted.length === 0) {
+  if (sorted.length === 0 && sortedNotifications.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
-        No recent alerts affect this project.
+        No recent alerts or contract notifications affect this project.
       </div>
     );
   }
 
   return (
     <div className="grid gap-3">
+      {sortedNotifications.map((notification) => (
+        <Card
+          key={notification.id}
+          className={cn(
+            (notification.urgency === "Critical" ||
+              notification.urgency === "High") &&
+              "ring-2 ring-destructive/30",
+          )}
+        >
+          <CardHeader>
+            <CardTitle className="flex items-start justify-between gap-3">
+              <span>{notification.title}</span>
+              <RiskBadge level={notification.urgency} compact />
+            </CardTitle>
+            <CardDescription className="flex flex-wrap items-center gap-2 pt-1">
+              <Badge variant="secondary">Contract notification</Badge>
+              <span className="inline-flex items-center gap-1 text-xs">
+                <CalendarClock className="size-3" />
+                {formatDate(notification.createdAt)}
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pb-4">
+            <p className="text-sm leading-relaxed text-foreground/90">
+              {notification.message}
+            </p>
+            <div className="grid gap-3">
+              {notification.affectedDocuments.map((document) => (
+                <div
+                  key={document.documentId}
+                  className="rounded-lg border border-border bg-muted/20 p-3"
+                >
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <FileText className="size-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground">
+                      {document.fileName}
+                    </span>
+                    <Badge variant="outline">
+                      {document.affectedSubclauses.length} affected clause
+                      {document.affectedSubclauses.length === 1 ? "" : "s"}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-2">
+                    {document.affectedSubclauses.map((clause) => (
+                      <div
+                        key={clause.chunkId}
+                        className="rounded-md bg-background/70 p-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <div className="text-sm font-medium text-foreground">
+                              {clause.clauseTitle}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Clause ID: {clause.clauseId}
+                            </div>
+                          </div>
+                          <RiskBadge level={clause.impactLevel} compact />
+                        </div>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          <DeltaBlock
+                            label="Why it matters"
+                            tone="muted"
+                            text={clause.reason}
+                          />
+                          <DeltaBlock
+                            label="Recommended action"
+                            tone="brand"
+                            text={clause.recommendedAction}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
       {sorted.map((alert) => (
         <Card
           key={alert.id}
@@ -737,6 +842,19 @@ function AlertsView({ alerts }: { alerts: Alert[] }) {
       ))}
     </div>
   );
+}
+
+function formatDate(value: string) {
+  const timestamp = Date.parse(value);
+
+  if (!Number.isFinite(timestamp)) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(timestamp);
 }
 
 function DeltaBlock({

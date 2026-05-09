@@ -18,6 +18,7 @@ import {
   fileKey,
   storeFile,
 } from "@/lib/file-storage";
+import type { ImpactNotification } from "@/lib/rag/types";
 
 type Stage = "idle" | "analyzing" | "ready";
 
@@ -27,6 +28,7 @@ export default function Home() {
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pendingPrompt, setPendingPrompt] = useState("");
+  const [notifications, setNotifications] = useState<ImpactNotification[]>([]);
 
   useEffect(() => {
     const stored = loadProjects();
@@ -50,6 +52,8 @@ export default function Home() {
     description: string;
     files: AttachedFile[];
   }) => {
+    const projectId = newProjectId();
+
     setPendingPrompt(description);
     setStage("analyzing");
     setError(null);
@@ -59,6 +63,7 @@ export default function Home() {
       if (files.length > 0) {
         const formData = new FormData();
         formData.append("description", description);
+        formData.append("projectId", projectId);
         for (const f of files) {
           formData.append("files", f.file, f.file.name);
         }
@@ -67,7 +72,7 @@ export default function Home() {
         res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description }),
+          body: JSON.stringify({ description, projectId }),
         });
       }
 
@@ -77,7 +82,6 @@ export default function Home() {
       }
 
       const snapshot = data as SavedProjectSnapshot;
-      const projectId = newProjectId();
 
       const savedFiles: SavedFile[] = [];
       for (let i = 0; i < files.length; i++) {
@@ -150,6 +154,76 @@ export default function Home() {
   };
 
   const activeProject = projects.find((p) => p.id === activeId) ?? null;
+  const activeProjectFileKey = activeProject
+    ? [
+        ...(activeProject.files?.map((file) => file.name) ?? []),
+        ...(activeProject.snapshot.attachedFilesProcessed?.map(
+          (file) => file.filename,
+        ) ?? []),
+      ]
+        .map((name) => name.trim().toLowerCase())
+        .sort()
+        .join("|")
+    : "";
+  const notificationScope = `${activeId ?? ""}:${activeProjectFileKey}`;
+
+  useEffect(() => {
+    if (stage !== "ready" || !activeId || !activeProject) {
+      setNotifications([]);
+      return;
+    }
+
+    let cancelled = false;
+    const projectFileNames = new Set(
+      activeProjectFileKey.split("|").filter(Boolean),
+    );
+
+    function matchesProjectFiles(notification: ImpactNotification) {
+      if (projectFileNames.size === 0) {
+        return false;
+      }
+
+      return notification.affectedDocuments.some((document) =>
+        projectFileNames.has(document.fileName.trim().toLowerCase()),
+      );
+    }
+
+    async function loadNotifications() {
+      try {
+        const res = await fetch(
+          `/api/notifications?projectId=${encodeURIComponent(activeId ?? "")}`,
+        );
+        const data = await res.json();
+        let nextNotifications: ImpactNotification[] =
+          res.ok && Array.isArray(data.notifications) ? data.notifications : [];
+
+        if (nextNotifications.length === 0 && projectFileNames.size > 0) {
+          const fallbackRes = await fetch("/api/notifications");
+          const fallbackData = await fallbackRes.json();
+          const allNotifications: ImpactNotification[] =
+            fallbackRes.ok && Array.isArray(fallbackData.notifications)
+              ? fallbackData.notifications
+              : [];
+
+          nextNotifications = allNotifications.filter(matchesProjectFiles);
+        }
+
+        if (!cancelled) {
+          setNotifications(nextNotifications);
+        }
+      } catch (error) {
+        console.warn("Failed to load notifications", error);
+      }
+    }
+
+    void loadNotifications();
+    const intervalId = window.setInterval(loadNotifications, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [notificationScope, stage]);
 
   return (
     <>
@@ -161,6 +235,7 @@ export default function Home() {
         {stage === "ready" && activeProject ? (
           <Dashboard
             snapshot={activeProject.snapshot}
+            notifications={notifications}
             prompt={activeProject.prompt}
             projects={projects}
             activeId={activeProject.id}
