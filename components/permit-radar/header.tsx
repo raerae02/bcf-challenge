@@ -23,7 +23,7 @@ export function AppHeader({ onReset, showReset }: HeaderProps) {
               Permit Radar AI
             </span>
             <span className="text-xs text-muted-foreground">
-              Veille intelligente des permis
+              Smart permit and compliance monitoring
             </span>
           </span>
         </button>

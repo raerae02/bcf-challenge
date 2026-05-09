@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({
   vertexai: true,
-  project: process.env.GOOGLE_CLOUD_PROJECT || "project-69535adc-107a-46bc-a15",
+  project: process.env.GOOGLE_CLOUD_PROJECT,
   location: "us-central1",
 });
 
@@ -24,7 +24,7 @@ export async function callGemini(
     systemPrompt?: string;
     json?: boolean;
     files?: FileInput[];
-  }
+  },
 ): Promise<string> {
   const parts: Part[] = [{ text: prompt }];
 
@@ -55,12 +55,14 @@ export async function callGemini(
 export async function callGeminiJSON<T>(
   prompt: string,
   systemPrompt: string,
-  files?: FileInput[]
+  files?: FileInput[],
 ): Promise<T> {
   const text = await callGemini(prompt, { systemPrompt, json: true, files });
   try {
     return JSON.parse(text) as T;
   } catch {
-    throw new Error(`Failed to parse Gemini JSON response: ${text.substring(0, 200)}`);
+    throw new Error(
+      `Failed to parse Gemini JSON response: ${text.substring(0, 200)}`,
+    );
   }
 }

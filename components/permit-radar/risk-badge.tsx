@@ -12,10 +12,10 @@ const STYLES: Record<RiskLevel, string> = {
 };
 
 const LABELS: Record<RiskLevel, string> = {
-  Critical: "Risque critique",
-  High: "Risque élevé",
-  Medium: "Risque modéré",
-  Low: "Risque faible",
+  Critical: "Critical risk",
+  High: "High risk",
+  Medium: "Medium risk",
+  Low: "Low risk",
 };
 
 const ICONS: Record<RiskLevel, typeof AlertTriangle> = {

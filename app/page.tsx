@@ -49,12 +49,12 @@ export default function Home() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data?.error ?? `Erreur ${res.status}`);
+        throw new Error(data?.error ?? `Error ${res.status}`);
       }
       setSnapshot(data as AnalyzedSnapshot);
       setStage("ready");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inconnue");
+      setError(err instanceof Error ? err.message : "Unknown error");
       setStage("idle");
     }
   };
@@ -82,10 +82,8 @@ export default function Home() {
       </main>
       <footer className="border-t border-border py-6">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-4 text-xs text-muted-foreground sm:flex-row sm:px-6">
-          <span>© Permit Radar AI · Prototype hackathon BCF</span>
-          <span>
-            Information juridique générée par IA — non un avis juridique.
-          </span>
+          <span>© Permit Radar AI · BCF Hackathon prototype</span>
+          <span>AI-generated legal information — not legal advice.</span>
         </div>
       </footer>
     </>

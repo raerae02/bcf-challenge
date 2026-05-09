@@ -93,7 +93,7 @@ export function Dashboard({ snapshot, prompt }: DashboardProps) {
           </TabsTrigger>
           <TabsTrigger value="alerts">
             <Bell className="size-4" />
-            Alertes
+            Alerts
             {recentAlerts.length > 0 ? (
               <Badge variant="destructive" className="ml-1">
                 {recentAlerts.length}
@@ -102,7 +102,7 @@ export function Dashboard({ snapshot, prompt }: DashboardProps) {
           </TabsTrigger>
           <TabsTrigger value="risk">
             <Shield className="size-4" />
-            Rapport de risque
+            Risk report
           </TabsTrigger>
           <TabsTrigger value="chat">
             <MessageCircle className="size-4" />
@@ -148,7 +148,7 @@ function ProjectSummary({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Sparkles className="size-3.5 text-brand" />
-            Profil de projet extrait par IA
+            AI-extracted project profile
           </div>
           <h2 className="font-heading mt-2 text-2xl font-semibold tracking-tight capitalize">
             {profile.businessType}
@@ -167,12 +167,12 @@ function ProjectSummary({
             </Chip>
             {profile.scale.squareFeet ? (
               <Chip icon={<Building2 className="size-3" />}>
-                {profile.scale.squareFeet} pi²
+                {profile.scale.squareFeet} sq ft
               </Chip>
             ) : null}
             {profile.scale.employees ? (
               <Chip icon={<Users className="size-3" />}>
-                {profile.scale.employees} employés
+                {profile.scale.employees} employees
               </Chip>
             ) : null}
             {profile.activities.map((a) => (
@@ -185,7 +185,7 @@ function ProjectSummary({
           {attachedFiles && attachedFiles.length > 0 ? (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Documents analysés
+                Documents analyzed
               </span>
               {attachedFiles.map((f) => (
                 <Badge key={f.filename} variant="secondary" className="gap-1">
@@ -198,15 +198,15 @@ function ProjectSummary({
 
           {profile.considerations && profile.considerations.length > 0 ? (
             <div className="mt-3 rounded-lg bg-muted/40 px-3 py-2 text-xs text-foreground/80">
-              <span className="font-medium">Considérations détectées : </span>
+              <span className="font-medium">Detected considerations: </span>
               {profile.considerations.join(" · ")}
             </div>
           ) : null}
         </div>
 
         <div className="flex flex-row gap-3 sm:flex-col sm:items-end">
-          <Stat label="Règles applicables" value={ruleCount} />
-          <Stat label="Alertes pertinentes" value={alertCount} accent />
+          <Stat label="Applicable rules" value={ruleCount} />
+          <Stat label="Relevant alerts" value={alertCount} accent />
           <RiskBadge level={overall} />
         </div>
       </div>
@@ -261,7 +261,7 @@ function SnapshotView({ rules }: { rules: AnalyzedRegulation[] }) {
   if (rules.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
-        Aucun règlement applicable identifié pour ce profil.
+        No applicable regulations identified for this profile.
       </div>
     );
   }
@@ -282,13 +282,13 @@ function SnapshotView({ rules }: { rules: AnalyzedRegulation[] }) {
                 <CardTitle className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
                     <FileText className="size-4 text-muted-foreground" />
-                    {rule.title.fr}
+                    {rule.title.en || rule.title.fr}
                   </span>
                   <span className="flex items-center gap-2">
                     {linkedAlerts.length > 0 ? (
                       <Badge variant="destructive" className="gap-1">
                         <Bell className="size-3" />
-                        {linkedAlerts.length} changement
+                        {linkedAlerts.length} change
                         {linkedAlerts.length > 1 ? "s" : ""}
                       </Badge>
                     ) : null}
@@ -307,7 +307,7 @@ function SnapshotView({ rules }: { rules: AnalyzedRegulation[] }) {
                 {rule.whyItApplies ? (
                   <div className="rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-brand">
-                      Pourquoi ça s&apos;applique
+                      Why it applies
                     </div>
                     <p className="mt-0.5 text-foreground/85">
                       {rule.whyItApplies}
@@ -315,22 +315,22 @@ function SnapshotView({ rules }: { rules: AnalyzedRegulation[] }) {
                   </div>
                 ) : null}
                 <p className="text-sm text-foreground/85">
-                  {rule.personalizedSummary || rule.summary.fr}
+                  {rule.summary.en || rule.summary.fr}
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <MetaItem
                     icon={<Clock className="size-3.5" />}
-                    label="Délai estimé"
+                    label="Estimated timeline"
                     value={formatTimeline(rule.estimatedTimelineDays)}
                   />
                   <MetaItem
                     icon={<Coins className="size-3.5" />}
-                    label="Coût estimé"
+                    label="Estimated cost"
                     value={formatCost(rule.estimatedCost)}
                   />
                   <MetaItem
                     icon={<ExternalLink className="size-3.5" />}
-                    label="Source officielle"
+                    label="Official source"
                     value={
                       <a
                         href={rule.officialUrl}
@@ -338,7 +338,7 @@ function SnapshotView({ rules }: { rules: AnalyzedRegulation[] }) {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-foreground hover:underline"
                       >
-                        Consulter
+                        Open
                         <ArrowUpRight className="size-3" />
                       </a>
                     }
@@ -348,7 +348,7 @@ function SnapshotView({ rules }: { rules: AnalyzedRegulation[] }) {
                   <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
                     <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-destructive">
                       <Bell className="size-3.5" />
-                      Changements récents affectant cette règle
+                      Recent changes affecting this rule
                     </div>
                     <ul className="space-y-1.5 text-sm">
                       {linkedAlerts.map((a) => (
@@ -401,7 +401,7 @@ function AlertsView({ alerts }: { alerts: Alert[] }) {
   if (sorted.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
-        Aucune alerte récente n&apos;affecte ce projet.
+        No recent alerts affect this project.
       </div>
     );
   }
@@ -432,8 +432,8 @@ function AlertsView({ alerts }: { alerts: Alert[] }) {
           </CardHeader>
           <CardContent className="space-y-3 pb-4">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <DeltaBlock label="Avant" tone="muted" text={alert.oldText} />
-              <DeltaBlock label="Après" tone="brand" text={alert.newText} />
+              <DeltaBlock label="Before" tone="muted" text={alert.oldText} />
+              <DeltaBlock label="After" tone="brand" text={alert.newText} />
             </div>
           </CardContent>
         </Card>
@@ -481,11 +481,9 @@ function RiskReportView({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="size-4" />
-            Synthèse exécutive
+            Executive summary
           </CardTitle>
-          <CardDescription>
-            Vue d&apos;ensemble adaptée au projet
-          </CardDescription>
+          <CardDescription>Overview tailored to your project</CardDescription>
         </CardHeader>
         <CardContent className="pb-4">
           <p className="text-sm leading-relaxed text-foreground/90">
@@ -495,7 +493,7 @@ function RiskReportView({
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Niveau de risque global</CardTitle>
+          <CardTitle>Overall risk level</CardTitle>
         </CardHeader>
         <CardContent className="pb-4">
           <RiskBadge level={overall} className="text-sm" />
@@ -507,7 +505,7 @@ function RiskReportView({
 
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Risques principaux</CardTitle>
+          <CardTitle>Top risks</CardTitle>
         </CardHeader>
         <CardContent className="pb-4">
           {report.topRisks.length > 0 ? (
@@ -523,7 +521,7 @@ function RiskReportView({
             </ol>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Aucun risque majeur identifié.
+              No major risks identified.
             </p>
           )}
         </CardContent>
@@ -531,7 +529,7 @@ function RiskReportView({
 
       <Card>
         <CardHeader>
-          <CardTitle>Actions recommandées</CardTitle>
+          <CardTitle>Recommended actions</CardTitle>
         </CardHeader>
         <CardContent className="pb-4">
           <ul className="space-y-2">
@@ -551,18 +549,18 @@ function RiskReportView({
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 const STARTER_QUESTIONS = [
-  "Quels sont mes risques les plus urgents ?",
-  "Qu'est-ce qui a changé récemment pour mon projet ?",
-  "Quels permis devrais-je demander en premier ?",
+  "What are my most urgent risks?",
+  "What has changed recently for my project?",
+  "Which permits should I apply for first?",
 ];
 
 function ChatView({ profile }: { profile: ProjectProfile }) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: `Bonjour. J'ai analysé ton projet de ${profile.businessType.toLowerCase()} à ${
+      content: `Hi. I've analyzed your ${profile.businessType.toLowerCase()} project in ${
         profile.location.borough ?? profile.location.city
-      }. Pose-moi une question sur les permis, le zonage ou les changements récents.`,
+      }. Ask me anything about permits, zoning, or recent changes.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -586,7 +584,7 @@ function ChatView({ profile }: { profile: ProjectProfile }) {
         ...prev,
         {
           role: "assistant",
-          content: data.answer ?? "Je n'ai pas pu produire de réponse.",
+          content: data.answer ?? "I couldn't produce an answer.",
         },
       ]);
     } catch {
@@ -595,7 +593,7 @@ function ChatView({ profile }: { profile: ProjectProfile }) {
         {
           role: "assistant",
           content:
-            "Le chat n'est pas encore branché côté serveur. Ajoute /api/chat pour activer les réponses RAG.",
+            "Chat isn't wired up server-side yet. Add /api/chat to enable RAG answers.",
         },
       ]);
     } finally {
@@ -608,10 +606,11 @@ function ChatView({ profile }: { profile: ProjectProfile }) {
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="size-4" />
-          Chat sur les sources réglementaires
+          Chat with regulatory sources
         </CardTitle>
         <CardDescription>
-          RAG sur règlements municipaux, MAPAQ, RBQ et Code de construction
+          RAG over municipal regulations, MAPAQ, RBQ, and the Quebec
+          Construction Code
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 pb-4">
@@ -669,13 +668,13 @@ function ChatView({ profile }: { profile: ProjectProfile }) {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Pose une question sur les permis ou règlements..."
+            placeholder="Ask a question about permits or regulations..."
             className="flex-1 bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
             disabled={pending}
           />
           <Button type="submit" size="sm" disabled={!input.trim() || pending}>
             <Send className="size-3.5" />
-            Envoyer
+            Send
           </Button>
         </form>
       </CardContent>
@@ -691,14 +690,14 @@ function formatTimeline(
   range: { min: number; max: number } | null,
 ): React.ReactNode {
   if (!range) return "Variable";
-  if (range.min === range.max) return `${range.min} jours`;
-  return `${range.min}–${range.max} jours`;
+  if (range.min === range.max) return `${range.min} days`;
+  return `${range.min}–${range.max} days`;
 }
 
 function formatCost(
   cost: { min: number; max: number; currency: "CAD" } | null,
 ): React.ReactNode {
   if (!cost) return "Variable";
-  if (cost.min === cost.max) return `${cost.min} $`;
-  return `${cost.min}–${cost.max} $`;
+  if (cost.min === cost.max) return `$${cost.min}`;
+  return `$${cost.min}–${cost.max}`;
 }
