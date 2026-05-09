@@ -14,6 +14,9 @@ import type {
   RegulatorySnapshot,
 } from "@/lib/types";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 const EXTRACT_PROFILE_PROMPT = `You are an expert in Quebec and Montreal business regulations.
 
 Extract structured information about a business venture from the user's description AND any attached documents (project plans, contracts, leases, business plans).
@@ -46,6 +49,7 @@ Return ONLY valid JSON:
 }
 
 Rules:
+- Respond in English.
 - Plain language, no legal jargon
 - Prioritize by what the user should do FIRST
 - Be specific to the project
@@ -175,8 +179,8 @@ export async function POST(req: NextRequest) {
 
     const analyzedRules: AnalyzedRegulation[] = matched.map((r) => ({
       ...r,
-      personalizedSummary: r.summary.fr,
-      whyItApplies: `S'applique parce que votre projet inclut: ${profile.activities
+      personalizedSummary: r.summary.en || r.summary.fr,
+      whyItApplies: `Applies because your project includes: ${profile.activities
         .filter((a) => r.appliesWhen.includes(a))
         .join(", ")}.`,
       recentChanges: matchedAlerts.filter((a) =>
@@ -188,7 +192,7 @@ export async function POST(req: NextRequest) {
       {
         profile,
         regulations: matched.map((r) => ({
-          title: r.title.fr,
+          title: r.title.en || r.title.fr,
           riskLevel: r.riskLevel,
         })),
         alerts: matchedAlerts.map((a) => ({
@@ -210,14 +214,14 @@ export async function POST(req: NextRequest) {
       }>(reportInput, RISK_REPORT_PROMPT);
     } catch {
       riskReport = {
-        executiveSummary: `Votre projet (${profile.businessType}) à ${profile.location.city} nécessite ${matched.length} permis et règlements applicables.`,
+        executiveSummary: `Your ${profile.businessType} project in ${profile.location.city} has ${matched.length} applicable permits and regulations.`,
         topRisks: matched
           .filter((r) => r.riskLevel === "High" || r.riskLevel === "Critical")
-          .map((r) => r.title.fr)
+          .map((r) => r.title.en || r.title.fr)
           .slice(0, 5),
-        recommendedActions: ["Consulter un avocat spécialisé pour validation."],
+        recommendedActions: ["Consult a specialized lawyer for validation."],
         disclaimer:
-          "Ceci est de l'information juridique, pas un avis juridique. Consultez un professionnel.",
+          "This is legal information, not legal advice. Consult a professional.",
       };
     }
 
