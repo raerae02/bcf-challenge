@@ -59,7 +59,13 @@ export async function callGeminiJSON<T>(
 ): Promise<T> {
   const text = await callGemini(prompt, { systemPrompt, json: true, files });
   try {
-    return JSON.parse(text) as T;
+    const cleaned = text
+      .trim()
+      .replace(/^```(?:json)?/i, "")
+      .replace(/```$/i, "")
+      .trim();
+
+    return JSON.parse(cleaned) as T;
   } catch {
     throw new Error(
       `Failed to parse Gemini JSON response: ${text.substring(0, 200)}`,
