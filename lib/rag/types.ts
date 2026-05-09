@@ -118,10 +118,7 @@ export type ImpactNotification = {
   affectedDocuments: {
     documentId: string;
     fileName: string;
-    impactLevel: ImpactUrgency;
-    reason: string;
-    recommendedAction: string;
-    matchingChunkIds?: string[];
+    affectedSubclauses: AffectedSubclause[];
   }[];
   createdAt: string;
   read: boolean;

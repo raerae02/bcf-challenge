@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
-import { analyzeAffectedSubclausesWithGemini } from "@/lib/rag/impact";
-import { buildStructuredLawEmbeddingText, fallbackStructuredLaw } from "@/lib/rag/laws";
-import { findRelevantChunksForLaw } from "@/lib/rag/sources";
-import type { ImpactScanDraft, LawUpdate, Project } from "@/lib/rag/types";
+import { runImpactScanForProject } from "@/lib/rag/monitoring";
 
 function parseImpactRequest(value: unknown) {
   const body = value as { projectId?: unknown; lawId?: unknown; topK?: unknown };
@@ -26,77 +22,23 @@ function parseImpactRequest(value: unknown) {
   };
 }
 
-async function loadProject(projectId: string): Promise<Project | null> {
-  const snapshot = await db.collection("projects").doc(projectId).get();
-  return snapshot.exists
-    ? ({ id: snapshot.id, ...snapshot.data() } as Project)
-    : null;
-}
-
-async function loadLaw(lawId: string): Promise<LawUpdate | null> {
-  const snapshot = await db.collection("laws").doc(lawId).get();
-  return snapshot.exists
-    ? ({ id: snapshot.id, ...snapshot.data() } as LawUpdate)
-    : null;
-}
-
-function lawTextForSearch(law: LawUpdate) {
-  const structured =
-    law.structured ??
-    fallbackStructuredLaw({
-      title: law.title,
-      source: law.source,
-      jurisdiction: law.jurisdiction,
-      category: law.category,
-      urgency: law.urgency,
-      oldText: law.oldText,
-      newText: law.newText,
-      summary: law.summary,
-      risk: law.risk,
-    });
-
-  return buildStructuredLawEmbeddingText(structured);
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { projectId, lawId, topK } = parseImpactRequest(await req.json());
-    const [project, law] = await Promise.all([
-      loadProject(projectId),
-      loadLaw(lawId),
-    ]);
-
-    if (!project) {
-      return NextResponse.json({ error: `Project not found: ${projectId}` }, { status: 404 });
-    }
-
-    if (!law) {
-      return NextResponse.json({ error: `Law not found: ${lawId}` }, { status: 404 });
-    }
-
-    const retrievedSubclauses = await findRelevantChunksForLaw({
-      projectId,
-      lawText: lawTextForSearch(law),
-      topK,
-    });
-    const impact = await analyzeAffectedSubclausesWithGemini({
-      project,
-      law,
-      chunks: retrievedSubclauses,
-    });
-    const response: ImpactScanDraft = {
+    const response = await runImpactScanForProject({
       projectId,
       lawId,
-      retrievedSubclauses,
-      affectedDocuments: impact.affectedDocuments,
-      notificationDraft: impact.notificationDraft,
-    };
+      topK,
+    });
 
     return NextResponse.json(response);
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to run impact scan.";
+    const status = message.includes("not found") ? 404 : 400;
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to run impact scan." },
-      { status: 400 },
+      { error: message },
+      { status },
     );
   }
 }
