@@ -244,30 +244,28 @@ Le temps est très limité. Il ne faut pas construire une plateforme complète.
 
 ## Ce qu’on construit
 
-- Backend Node.js TypeScript.
-- API Hono.
-- Lecture de données JSON.
-- Lecture de documents texte.
-- Analyse IA avec OpenAI.
-- Mini RAG keyword-based.
-- Comparaison de texte avec IA.
-- Endpoints prêts pour frontend.
+- Application full-stack Next.js 15 (TypeScript + Tailwind + shadcn/ui).
+- API routes Next.js (`app/api/*`).
+- Lecture de données JSON pour les projets, alertes et documents sources.
+- Analyse IA via Google Gemini 2.5 Flash sur Vertex AI.
+- Mini RAG keyword-based sur fichiers `.txt` locaux.
+- Réponses IA structurées en JSON.
+- Frontend démontrable : liste de projets, liste d'alertes, dashboard d'analyse, vue chronologique avec marqueurs d'expiration.
 
 ## Ce qu’on ne construit pas
 
-- Pas de vrai frontend dans cette phase.
-- Pas de base de données réelle.
-- Pas d’authentification réelle.
-- Pas d’Active Directory réel.
-- Pas de scraping réel.
-- Pas d’intégration CanLII réelle.
-- Pas d’OCR.
-- Pas de parsing PDF avancé.
-- Pas de vector database complexe.
-- Pas de microservices.
-- Pas de Kubernetes.
-- Pas de Prisma.
-- Pas de NestJS.
+- Pas de serveur backend séparé — tout vit dans le projet Next.js.
+- Pas de base de données réelle (les fichiers JSON suffisent pour la démo).
+- Pas d'authentification réelle.
+- Pas d'Active Directory ni de SSO.
+- Pas de scraping en direct des sites municipaux.
+- Pas d'intégration CanLII réelle (on utilise des extraits de décisions chargés manuellement).
+- Pas d'OCR ni de parsing PDF avancé.
+- Pas de vector database.
+- Pas d'embeddings sémantiques.
+- Pas de microservices ni de Kubernetes.
+- Pas de Prisma ni de NestJS.
+
 
 Ces éléments peuvent être mentionnés comme évolution future ou architecture enterprise, mais pas implémentés dans les 6h.
 
@@ -277,13 +275,15 @@ Ces éléments peuvent être mentionnés comme évolution future ou architecture
 
 ## Backend
 
-- Node.js
+- Node.js 20+
 - TypeScript
-- Hono
-- Zod
-- OpenAI SDK
-- dotenv
-- tsx
+- Next.js 15 (App Router)
+- React 19
+- Tailwind CSS
+- shadcn/ui (composants UI préfabriqués)
+- Zod (validation des inputs API)
+- Gemini 4.5 flash
+
 
 ## Données
 
@@ -292,8 +292,9 @@ Ces éléments peuvent être mentionnés comme évolution future ou architecture
 
 ## IA
 
-- OpenAI API pour la génération structurée
-- Fallback possible si l’API ne fonctionne pas
+- Google Gemini 2.5 Flash
+- Accès via Vertex AI (Google Cloud)
+- SDK : `@google/genai`
 
 ## RAG
 
@@ -303,36 +304,7 @@ Ces éléments peuvent être mentionnés comme évolution future ou architecture
 
 ---
 
-## 10. Pourquoi Hono au lieu d’Express ou NestJS
-
-## Hono
-
-Avantages :
-
-- très léger ;
-- simple ;
-- rapide à configurer ;
-- compatible TypeScript ;
-- bon pour un hackathon ;
-- moins lourd que NestJS ;
-- plus moderne et clean qu’un setup Express classique.
-
-## Pourquoi pas NestJS
-
-NestJS est puissant, mais trop lourd pour 6h. Il ajoute beaucoup de structure, de décorateurs, de modules et de configuration. Pour un hackathon, ça ralentit.
-
-## Pourquoi pas une vraie DB
-
-Une base de données ajouterait du setup inutile. Les fichiers JSON suffisent pour démontrer :
-
-- les projets ;
-- les alertes ;
-- les documents sources ;
-- les analyses IA.
-
----
-
-## 11. Architecture backend cible
+## 10. Architecture backend cible
 
 ```txt
 backend/
