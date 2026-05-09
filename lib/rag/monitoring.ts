@@ -2,12 +2,7 @@ import { db } from "@/lib/firebase-admin";
 import { analyzeAffectedSubclausesWithGemini } from "@/lib/rag/impact";
 import { buildStructuredLawEmbeddingText, fallbackStructuredLaw } from "@/lib/rag/laws";
 import { findRelevantChunksForLaw } from "@/lib/rag/sources";
-import type {
-  ImpactNotification,
-  ImpactScanDraft,
-  LawUpdate,
-  Project,
-} from "@/lib/rag/types";
+import type { ImpactNotification, ImpactScanDraft, LawUpdate, Project } from "@/lib/rag/types";
 
 const DEFAULT_TOP_K = 8;
 

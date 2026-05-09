@@ -1,0 +1,86 @@
+[
+  {
+    "seedId": "demo_qc_cultural_heritage_p_9_002",
+    "title": "Cultural Heritage Act, CQLR c P-9.002",
+    "source": "LegisQuebec",
+    "sourceUrl": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/p-9.002/20211105?langCont=en",
+    "jurisdiction": "Quebec",
+    "category": "Heritage / Permits",
+    "urgency": "High",
+    "newText": "1. The object of this Act is to promote, in the public interest and from a sustainable development perspective, the knowledge, protection, enhancement and transmission of cultural heritage, which is a reflection of a society's identity.\n\nIt is also intended to promote the designation of deceased persons of historical importance and historic events and sites.\n\nCultural heritage consists of deceased persons of historical importance, historic events and sites, heritage documents, immovables, objects and sites, heritage cultural landscapes, and intangible heritage.\n\n26. The owner of classified heritage property must take the necessary measures to preserve the heritage value of the property.\n\n29. After obtaining the opinion of the council, the Minister may, on the Minister's own initiative or on a proposal from any interested person, classify all or part of any heritage property the knowledge, protection, enhancement or transmission of which is in the public interest.\n\n40. The Minister may, by order, on the Minister’s own initiative or on a proposal from any interested person and after obtaining the opinion of the council, establish the boundaries of the protection area of a classified heritage immovable.\n\nHowever, the perimeter of the protection area must not exceed a distance of 152 m from the classified heritage immovable.",
+    "summary": "Exact excerpts from the Cultural Heritage Act on heritage protection, heritage immovables/sites, and preservation duties for classified heritage property.",
+    "risk": "May affect projects involving heritage buildings, protected sites, historic districts, demolition, exterior alterations, redevelopment, municipal approvals, and permit timelines."
+  },
+  {
+    "seedId": "demo_qc_parks_p_9",
+    "title": "Parks Act, CQLR c P-9",
+    "source": "LegisQuebec",
+    "sourceUrl": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/p-9?langcont=en",
+    "jurisdiction": "Quebec",
+    "category": "Parks / Land Use",
+    "urgency": "High",
+    "newText": "1. In this Act, unless the context indicates a different meaning,\n\nb) \"park\" means a national park whose primary purpose is to ensure the conservation and permanent protection of areas representative of the natural regions of Quebec and of natural sites with outstanding features, in particular because of their biological diversity, while providing the public with access to those areas or sites for educational or cross-country recreation purposes;\n\n6. The Minister may authorize or carry out any work of maintenance, development or construction in a park that may serve to maintain or improve the quality of the park. The Minister may also, subject to the applicable legislative provisions, authorize or carry out such work outside the boundaries of a park insofar as the work is necessary to the operations of the park.\n\n7. Notwithstanding any provision of law,\n\nb) all forms of prospecting, and any utilization, harvesting or harnessing of resources related to logging, mining or the production of energy, and the laying of oil or gas pipelines or power lines, are prohibited within the confines of a park.\n\n8. No person may do other maintenance, development or construction work in or make changes to the grounds of a park without prior authorization from the Minister pursuant to the first paragraph of section 6.",
+    "summary": "Exact excerpts from the Parks Act on park conservation, construction work, prohibited resource activities, and authorization requirements.",
+    "risk": "May affect construction, development, utilities, access roads, site work, environmental constraints, and projects inside or near park lands."
+  },
+  {
+    "seedId": "demo_qc_building_act_b_1_1",
+    "title": "Building Act, CQLR c B-1.1",
+    "source": "LegisQuebec",
+    "sourceUrl": "https://www.legisquebec.gouv.qc.ca/en/document/cs/B-1.1",
+    "jurisdiction": "Quebec",
+    "category": "Building / RBQ",
+    "urgency": "High",
+    "newText": "1. The purposes of this Act are:\n\n1° to ensure proper quality of the construction work of buildings, and in certain cases, facilities intended for use by the public, installations independent of a building or petroleum equipment installations;\n\n2° to ensure the quality of a building and the safety of the public who have access to a building or facilities intended for use by the public or who use installations independent of a building or petroleum equipment installations; and,\n\n3° to ensure the vocational qualifications, integrity and solvency of contractors, owner-builders and building inspectors.\n\nA further purpose of this Act is to establish the Regie du batiment du Quebec (Board).",
+    "summary": "Exact excerpt from section 1 of the Building Act defining construction quality, public safety, and contractor qualification purposes.",
+    "risk": "May affect contractor licensing, owner-builder obligations, inspections, construction standards, public safety requirements, and permit readiness."
+  },
+  {
+    "seedId": "demo_qc_building_act_application_b_1_1_r_1",
+    "title": "Regulation respecting the application of the Building Act, B-1.1, r. 1",
+    "source": "LegisQuebec",
+    "sourceUrl": "https://www.legisquebec.gouv.qc.ca/fr/ShowDoc/cr/B-1.1%2C%20r.%201?langcont=en",
+    "jurisdiction": "Quebec",
+    "category": "Building / Owner-Builder",
+    "urgency": "Medium",
+    "newText": "1. An owner-builder is exempt from the application of Chapter IV of the Building Act (chapter B-1.1)\n\n(1) where the planned construction work involves only the renovation, repair or maintenance of his property and is estimated at less than $20,000;\n\n(2) where the planned construction work corresponds to the categories or subcategories of construction work that he is permitted to carry out or cause to be carried out as the holder of a building contractor's licence; and\n\n(3) where the planned construction work is carried out by a contractor who holds a specialized contractor's licence including the licence subclasses required for that work and listed in Schedule II to the Regulation respecting the professional qualification of contractors and owner-builders (chapter B-1.1, r. 9);",
+    "summary": "Exact excerpt on owner-builder exemptions and contractor licence conditions under the Building Act application regulation.",
+    "risk": "May affect renovation budgets, contractor selection, licence verification, and whether work can proceed without additional RBQ owner-builder requirements."
+  },
+  {
+    "seedId": "demo_qc_environmental_performance_p_9_02",
+    "title": "Act respecting the environmental performance of buildings, CQLR c P-9.02",
+    "source": "LegisQuebec",
+    "sourceUrl": "https://www.legisquebec.gouv.qc.ca/en/document/cs/P-9.02",
+    "jurisdiction": "Quebec",
+    "category": "Environmental Performance / Buildings",
+    "urgency": "High",
+    "newText": "1. The purpose of this Act is to provide a framework for the environmental performance of buildings.\n\nFor the purposes of this Act, \"environmental performance\" means characteristics of a building that have an impact on the environment, such as its carbon footprint, the energy the building uses and when it uses it, the energy produced by the building as well as the equipment that promotes the sustainable mobility of its occupants or users.\n\n4. Every owner of a building, public body and energy distributor determined by a regulation of the Minister must, according to the terms and conditions prescribed by the regulation,\n\n1° declare to the Minister\n\na) the energy consumption of a building, its location, its area, how it is used, the type of energy it consumes and when that energy is consumed,\n\nb) the materials used during the construction work and the equipment and components of a building or the equipment of the site on which a building is situated,",
+    "summary": "Exact excerpts on environmental performance, carbon/energy characteristics, and reporting concepts for buildings.",
+    "risk": "May affect energy reporting, material reporting, building design, sustainability documentation, and compliance evidence for new construction or renovation projects."
+  },
+  {
+    "seedId": "demo_qc_land_use_planning_a_19_1",
+    "title": "Act respecting land use planning and development, CQLR c A-19.1",
+    "source": "LegisQuebec",
+    "sourceUrl": "https://www.legisquebec.gouv.qc.ca/en/document/cs/a-19.1?langCont=en",
+    "jurisdiction": "Quebec",
+    "category": "Zoning / Land Use",
+    "urgency": "High",
+    "newText": "Any subdivision, cadastral operation or parcelling out of a lot by alienation that is carried out contrary to a subdivision by-law, a by-law under section 145.21 or an interim control by-law or resolution, a plan approved in accordance with section 145.19, an agreement made under section 145.21, a resolution referred to in the second paragraph of section 145.7 or 145.38 or a land rehabilitation plan approved by the Minister of Sustainable Development, Environment and Parks under Division IV of Chapter IV of Title I of the Environment Quality Act (chapter Q-2) may be annulled.",
+    "summary": "Exact excerpt on land subdivision/cadastral operations carried out contrary to land use planning controls.",
+    "risk": "May affect zoning due diligence, subdivision, site plan approvals, land rehabilitation, cadastral operations, redevelopment structure, and municipal permit strategy."
+  },
+  {
+    "seedId": "demo_fed_prompt_payment_sor_2023_269",
+    "title": "Federal Prompt Payment for Construction Work Regulations (Criteria, Time Limits, Interest and Circumstances), SOR/2023-269",
+    "source": "Justice Laws",
+    "sourceUrl": "https://laws.justice.gc.ca/eng/regulations/SOR-2023-269/index.html",
+    "jurisdiction": "Federal",
+    "category": "Construction Payment / Contracts",
+    "urgency": "Medium",
+    "newText": "Federal Prompt Payment for Construction Work Regulations (Criteria, Time Limits, Interest and Circumstances) (SOR/2023-269)\n\nFull Document: Federal Prompt Payment for Construction Work Regulations (Criteria, Time Limits, Interest and Circumstances).\n\nRegulations are current to 2025-11-27 and last amended on 2023-12-09.\n\nEnabling Act: Federal Prompt Payment for Construction Work Act.",
+    "summary": "Official Justice Laws reference for federal prompt payment regulations governing criteria, time limits, interest, and circumstances for federal construction work.",
+    "risk": "May affect construction contracts involving federal work, invoice timing, payment disputes, interest exposure, delay clauses, and contractor cash-flow risk."
+  }
+]

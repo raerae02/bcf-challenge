@@ -26,6 +26,8 @@ function parseLawInput(value: unknown): RawLawInput {
   return {
     title: String(body.title).trim(),
     source: String(body.source).trim(),
+    sourceUrl: typeof body.sourceUrl === "string" ? body.sourceUrl.trim() : undefined,
+    seedId: typeof body.seedId === "string" ? body.seedId.trim() : undefined,
     jurisdiction: String(body.jurisdiction).trim(),
     category: String(body.category).trim(),
     urgency: body.urgency as ImpactUrgency,

@@ -33,8 +33,10 @@ Rules:
 - This is legal and permitting information, not legal advice.`;
 
 export type RawLawInput = {
+  seedId?: string;
   title: string;
   source: string;
+  sourceUrl?: string;
   jurisdiction: string;
   category: string;
   urgency: ImpactUrgency;
@@ -90,6 +92,7 @@ export function fallbackStructuredLaw(input: RawLawInput): StructuredLawUpdate {
   return {
     title: input.title,
     source: input.source,
+    sourceUrl: input.sourceUrl,
     jurisdiction: input.jurisdiction,
     category: input.category,
     urgency: input.urgency,
@@ -120,6 +123,7 @@ export function buildStructuredLawEmbeddingText(law: StructuredLawUpdate) {
   return [
     law.title,
     law.source,
+    law.sourceUrl,
     law.jurisdiction,
     law.category,
     law.urgency,
@@ -139,12 +143,15 @@ export function buildStructuredLawEmbeddingText(law: StructuredLawUpdate) {
 
 export async function createStructuredLaw(input: RawLawInput): Promise<LawUpdate> {
   const structured = await structureLawWithGemini(input);
-  const embedding = await generateEmbedding(buildStructuredLawEmbeddingText(structured));
-  const lawRef = db.collection("laws").doc();
+  const structuredWithSource = { ...structured, sourceUrl: input.sourceUrl };
+  const embedding = await generateEmbedding(buildStructuredLawEmbeddingText(structuredWithSource));
+  const lawRef = input.seedId ? db.collection("laws").doc(input.seedId) : db.collection("laws").doc();
   const law: LawUpdate = {
     id: lawRef.id,
+    seedId: input.seedId,
     title: structured.title || input.title,
     source: structured.source || input.source,
+    sourceUrl: input.sourceUrl,
     jurisdiction: structured.jurisdiction || input.jurisdiction,
     category: structured.category || input.category,
     urgency: structured.urgency || input.urgency,
@@ -152,12 +159,12 @@ export async function createStructuredLaw(input: RawLawInput): Promise<LawUpdate
     newText: structured.newText || input.newText,
     summary: structured.summary || input.summary,
     risk: structured.risk || input.risk,
-    structured,
+    structured: structuredWithSource,
     embedding,
     createdAt: new Date().toISOString(),
   };
 
-  await lawRef.set(stripUndefined(law));
+  await lawRef.set(stripUndefined(law), { merge: true });
 
   return law;
 }
