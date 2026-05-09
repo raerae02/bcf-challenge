@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { callGeminiJSON, type FileInput } from "@/lib/gemini";
 import { getRegulations, getAlerts } from "@/lib/data";
 import { matchRegulations, matchAlerts } from "@/lib/matcher";
-import { processFile } from "@/lib/fileParser";
+import { processFile, type ProcessedFile } from "@/lib/fileParser";
+import { db } from "@/lib/firebase-admin";
+import {
+  analyzeDocumentStructure,
+  createDocumentWithSubclauseVectors,
+} from "@/lib/rag/document-structure";
 import type {
   ProjectProfile,
   AnalyzedRegulation,
   RegulatorySnapshot,
 } from "@/lib/types";
+import type { StructuredDocument } from "@/lib/rag/types";
 
 const EXTRACT_PROFILE_PROMPT = `You are an expert in Quebec and Montreal business regulations.
 
@@ -48,18 +54,15 @@ Rules:
 
 async function extractFromRequest(req: NextRequest): Promise<{
   description: string;
-  files: {
-    filename: string;
-    buffer: Buffer;
-    mimeType: string;
-    inlineText: string | null;
-  }[];
+  projectId: string | null;
+  files: ProcessedFile[];
 }> {
   const contentType = req.headers.get("content-type") || "";
 
   if (contentType.includes("multipart/form-data")) {
     const formData = await req.formData();
     const description = (formData.get("description") as string) || "";
+    const projectId = (formData.get("projectId") as string) || null;
     const fileBlobs = formData.getAll("files") as File[];
 
     const files = await Promise.all(
@@ -71,16 +74,44 @@ async function extractFromRequest(req: NextRequest): Promise<{
         }),
     );
 
-    return { description, files };
-  } else {
-    const { description } = await req.json();
-    return { description: description || "", files: [] };
+    return { description, projectId, files };
   }
+
+  const { description, projectId } = await req.json();
+  return { description: description || "", projectId: projectId || null, files: [] };
+}
+
+async function persistProjectForUploadedDocuments({
+  projectId,
+  description,
+  profile,
+}: {
+  projectId: string;
+  description: string;
+  profile: ProjectProfile;
+}) {
+  const project = {
+    id: projectId,
+    name: description || profile.businessType || "Uploaded project",
+    location: profile.location.city,
+    projectType: profile.activities.includes("construction")
+      ? "Construction"
+      : profile.businessType,
+    use: profile.businessType,
+    sensitiveFactors: profile.considerations,
+    profile,
+    createdAt: new Date().toISOString(),
+  };
+
+  await db.collection("projects").doc(projectId).set(
+    profile.location.borough ? { ...project, borough: profile.location.borough } : project,
+    { merge: true },
+  );
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { description, files } = await extractFromRequest(req);
+    const { description, projectId, files } = await extractFromRequest(req);
 
     if (!description && files.length === 0) {
       return NextResponse.json(
@@ -89,7 +120,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build the combined prompt: description + inline text content (for txt/md)
     let combinedPrompt =
       description ||
       "(No text description provided. Refer to attached document(s).)";
@@ -99,7 +129,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Files for Gemini's inline file input (PDFs only — text files are inlined above)
     const geminiFiles: FileInput[] = files
       .filter((f) => f.inlineText === null)
       .map((f) => ({
@@ -108,22 +137,45 @@ export async function POST(req: NextRequest) {
         filename: f.filename,
       }));
 
-    // Step 1: Extract project profile (Gemini sees the PDF directly if attached)
     const profile = await callGeminiJSON<ProjectProfile>(
       combinedPrompt,
       EXTRACT_PROFILE_PROMPT,
       geminiFiles,
     );
 
-    // Step 2: Match regulations
+    let analyzedDocuments: StructuredDocument[] = [];
+    const persistedDocuments: { filename: string; documentId: string; chunkCount: number }[] = [];
+
+    if (files.length > 0) {
+      analyzedDocuments = await analyzeDocumentStructure({
+        combinedPrompt,
+        files,
+        geminiFiles,
+      });
+
+      if (projectId) {
+        await persistProjectForUploadedDocuments({ projectId, description, profile });
+
+        for (const [index, analyzedDocument] of analyzedDocuments.entries()) {
+          const stored = await createDocumentWithSubclauseVectors({
+            projectId,
+            file: files[index],
+            analyzedDocument,
+          });
+          persistedDocuments.push({
+            filename: analyzedDocument.filename,
+            documentId: stored.documentId,
+            chunkCount: stored.chunkCount,
+          });
+        }
+      }
+    }
+
     const allRegulations = await getRegulations();
     const matched = matchRegulations(profile, allRegulations);
-
-    // Step 3: Match alerts
     const allAlerts = await getAlerts();
     const matchedAlerts = matchAlerts(profile, allAlerts);
 
-    // Step 4: Attach base data
     const analyzedRules: AnalyzedRegulation[] = matched.map((r) => ({
       ...r,
       personalizedSummary: r.summary.fr,
@@ -135,7 +187,6 @@ export async function POST(req: NextRequest) {
       ),
     }));
 
-    // Step 5: Risk report
     const reportInput = JSON.stringify(
       {
         profile,
@@ -184,7 +235,7 @@ export async function POST(req: NextRequest) {
           : "Low";
 
     const snapshot: RegulatorySnapshot & {
-      attachedFilesProcessed?: { filename: string }[];
+      persistedDocuments?: { filename: string; documentId: string; chunkCount: number }[];
     } = {
       projectProfile: profile,
       totalApplicableRules: analyzedRules.length,
@@ -193,6 +244,8 @@ export async function POST(req: NextRequest) {
       recentAlerts: matchedAlerts,
       riskReport,
       attachedFilesProcessed: files.map((f) => ({ filename: f.filename })),
+      analyzedDocuments,
+      ...(persistedDocuments.length > 0 ? { persistedDocuments } : {}),
     };
 
     return NextResponse.json(snapshot);

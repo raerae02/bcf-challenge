@@ -27,6 +27,7 @@ export type LawUpdate = {
   risk?: string;
   createdAt?: string;
   embedding?: number[];
+  structured?: StructuredLawUpdate;
 };
 
 export type ProjectDocument = {
@@ -37,7 +38,47 @@ export type ProjectDocument = {
   summary?: string;
   tags?: string[];
   text?: string;
+  structured?: StructuredDocument;
   createdAt?: string;
+};
+
+export type StructuredClause = {
+  id: string;
+  title: string;
+  type: "section" | "clause" | "subclause" | "paragraph" | "schedule" | "other";
+  pageStart: number | null;
+  pageEnd: number | null;
+  text: string;
+  keyObligations: string[];
+  riskSignals: string[];
+  parties: string[];
+  tags: string[];
+  children?: StructuredClause[];
+};
+
+export type StructuredDocument = {
+  filename: string;
+  documentType: string;
+  title: string;
+  summary: string;
+  clauses: StructuredClause[];
+};
+
+export type StructuredLawUpdate = {
+  title: string;
+  source: string;
+  jurisdiction: string;
+  category: string;
+  urgency: ImpactUrgency;
+  summary: string;
+  effectiveChange: string;
+  obligations: string[];
+  affectedProjectFeatures: string[];
+  keywords: string[];
+  legalRiskThemes: string[];
+  oldText?: string;
+  newText: string;
+  risk?: string;
 };
 
 export type DocumentChunk = {
@@ -48,6 +89,16 @@ export type DocumentChunk = {
   chunkIndex: number;
   text: string;
   embedding: number[];
+  clauseId?: string;
+  clauseTitle?: string;
+  clauseType?: StructuredClause["type"];
+  pageStart?: number | null;
+  pageEnd?: number | null;
+  keyObligations?: string[];
+  riskSignals?: string[];
+  parties?: string[];
+  tags?: string[];
+  path?: string[];
   createdAt?: string;
 };
 
@@ -80,4 +131,31 @@ export type FindRelevantChunksForLawInput = {
   projectId: string;
   lawText: string;
   topK?: number;
+};
+
+export type AffectedSubclause = {
+  chunkId: string;
+  clauseId: string;
+  clauseTitle: string;
+  pageStart: number | null;
+  pageEnd: number | null;
+  impactLevel: ImpactUrgency;
+  reason: string;
+  recommendedAction: string;
+};
+
+export type ImpactScanDraft = {
+  projectId: string;
+  lawId: string;
+  retrievedSubclauses: ScoredDocumentChunk[];
+  affectedDocuments: {
+    documentId: string;
+    fileName: string;
+    affectedSubclauses: AffectedSubclause[];
+  }[];
+  notificationDraft: {
+    title: string;
+    message: string;
+    urgency: ImpactUrgency;
+  };
 };
