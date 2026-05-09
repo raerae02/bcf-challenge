@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowUpRight,
   Bell,
@@ -8,17 +8,22 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
+  ChevronDown,
   ClipboardList,
   Clock,
   Coins,
   ExternalLink,
   FileText,
+  FolderKanban,
   MapPin,
   MessageCircle,
   Paperclip,
+  Pencil,
+  Plus,
   Send,
   Shield,
   Sparkles,
+  Trash2,
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +46,8 @@ import type {
   ProjectProfile,
   RegulatorySnapshot,
 } from "@/lib/types";
+import type { SavedFile, SavedProject } from "@/lib/projects";
+import { getFile } from "@/lib/file-storage";
 import { cn } from "@/lib/utils";
 
 const RISK_ORDER: Record<RiskLevel, number> = {
@@ -57,9 +64,24 @@ type AnalyzedSnapshot = RegulatorySnapshot & {
 type DashboardProps = {
   snapshot: AnalyzedSnapshot;
   prompt: string;
+  projects: SavedProject[];
+  activeId: string;
+  onSelectProject: (id: string) => void;
+  onNewProject: () => void;
+  onDeleteProject: (id: string) => void;
+  onRenameProject: (id: string, name: string) => void;
 };
 
-export function Dashboard({ snapshot, prompt }: DashboardProps) {
+export function Dashboard({
+  snapshot,
+  prompt,
+  projects,
+  activeId,
+  onSelectProject,
+  onNewProject,
+  onDeleteProject,
+  onRenameProject,
+}: DashboardProps) {
   const { projectProfile, rules, recentAlerts, riskReport, riskOverview } =
     snapshot;
 
@@ -73,12 +95,22 @@ export function Dashboard({ snapshot, prompt }: DashboardProps) {
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+      <ProjectSwitcher
+        projects={projects}
+        activeId={activeId}
+        onSelectProject={onSelectProject}
+        onNewProject={onNewProject}
+        onDeleteProject={onDeleteProject}
+        onRenameProject={onRenameProject}
+      />
+
       <ProjectSummary
         profile={projectProfile}
         prompt={prompt}
         ruleCount={rules.length}
         alertCount={recentAlerts.length}
         overall={riskOverview}
+        savedFiles={projects.find((p) => p.id === activeId)?.files ?? []}
         attachedFiles={snapshot.attachedFilesProcessed}
       />
 
@@ -127,6 +159,195 @@ export function Dashboard({ snapshot, prompt }: DashboardProps) {
   );
 }
 
+function ProjectSwitcher({
+  projects,
+  activeId,
+  onSelectProject,
+  onNewProject,
+  onDeleteProject,
+  onRenameProject,
+}: {
+  projects: SavedProject[];
+  activeId: string;
+  onSelectProject: (id: string) => void;
+  onNewProject: () => void;
+  onDeleteProject: (id: string) => void;
+  onRenameProject: (id: string, name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+        setRenamingId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const active = projects.find((p) => p.id === activeId);
+  const others = projects.filter((p) => p.id !== activeId);
+
+  const startRename = (project: SavedProject) => {
+    setRenamingId(project.id);
+    setDraftName(project.name);
+  };
+
+  const commitRename = (id: string) => {
+    onRenameProject(id, draftName);
+    setRenamingId(null);
+  };
+
+  return (
+    <div ref={containerRef} className="relative mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium ring-1 ring-foreground/5 transition-colors hover:bg-muted/60"
+          >
+            <FolderKanban className="size-4 text-brand" />
+            <span className="max-w-[280px] truncate">
+              {active?.name ?? "Select project"}
+            </span>
+            <Badge variant="secondary" className="ml-1">
+              {projects.length}
+            </Badge>
+            <ChevronDown
+              className={cn(
+                "size-4 text-muted-foreground transition-transform",
+                open && "rotate-180",
+              )}
+            />
+          </button>
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            {projects.length === 1
+              ? "1 saved project"
+              : `${projects.length} saved projects`}
+          </span>
+        </div>
+
+        <Button variant="outline" size="sm" onClick={onNewProject}>
+          <Plus className="size-3.5" />
+          New project
+        </Button>
+      </div>
+
+      {open ? (
+        <div className="absolute left-0 top-full z-20 mt-2 w-full max-w-md rounded-xl border border-border bg-card p-1.5 shadow-lg ring-1 ring-foreground/5">
+          <div className="px-2 pb-1.5 pt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Your projects
+          </div>
+          <ul className="max-h-80 overflow-y-auto">
+            {[active, ...others].filter(Boolean).map((p) => {
+              const project = p as SavedProject;
+              const isActive = project.id === activeId;
+              const isRenaming = renamingId === project.id;
+              return (
+                <li
+                  key={project.id}
+                  className={cn(
+                    "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                    isActive ? "bg-brand/10" : "hover:bg-muted/60",
+                  )}
+                >
+                  {isRenaming ? (
+                    <input
+                      autoFocus
+                      value={draftName}
+                      onChange={(e) => setDraftName(e.target.value)}
+                      onBlur={() => commitRename(project.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename(project.id);
+                        if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      className="flex-1 rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-brand"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectProject(project.id);
+                        setOpen(false);
+                      }}
+                      className="flex min-w-0 flex-1 flex-col items-start text-left"
+                    >
+                      <span
+                        className={cn(
+                          "truncate font-medium",
+                          isActive ? "text-foreground" : "text-foreground/90",
+                        )}
+                      >
+                        {project.name}
+                      </span>
+                      <span className="truncate text-[11px] text-muted-foreground">
+                        {new Date(project.createdAt).toLocaleDateString()} ·{" "}
+                        {project.snapshot.rules.length} rules
+                      </span>
+                    </button>
+                  )}
+
+                  {!isRenaming ? (
+                    <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => startRename(project)}
+                        aria-label="Rename project"
+                        className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Delete "${project.name}"? This cannot be undone.`,
+                            )
+                          ) {
+                            onDeleteProject(project.id);
+                          }
+                        }}
+                        aria-label="Delete project"
+                        className="rounded p-1 text-muted-foreground hover:bg-background hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="border-t border-border pt-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                onNewProject();
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-brand hover:bg-brand/10"
+            >
+              <Plus className="size-4" />
+              New project
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function ProjectSummary({
   profile,
   prompt,
@@ -134,6 +355,7 @@ function ProjectSummary({
   alertCount,
   overall,
   attachedFiles,
+  savedFiles,
 }: {
   profile: ProjectProfile;
   prompt: string;
@@ -141,7 +363,13 @@ function ProjectSummary({
   alertCount: number;
   overall: RiskLevel;
   attachedFiles?: { filename: string }[];
+  savedFiles?: SavedFile[];
 }) {
+  const filesToRender: Array<{ name: string; saved?: SavedFile }> = (
+    savedFiles && savedFiles.length > 0
+      ? savedFiles.map((f) => ({ name: f.name, saved: f }))
+      : (attachedFiles ?? []).map((f) => ({ name: f.filename }))
+  );
   return (
     <div className="rounded-2xl border border-border bg-card p-5 ring-1 ring-foreground/5 sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -182,17 +410,25 @@ function ProjectSummary({
             ))}
           </div>
 
-          {attachedFiles && attachedFiles.length > 0 ? (
+          {filesToRender.length > 0 ? (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Documents analyzed
               </span>
-              {attachedFiles.map((f) => (
-                <Badge key={f.filename} variant="secondary" className="gap-1">
-                  <Paperclip className="size-3" />
-                  {f.filename}
-                </Badge>
-              ))}
+              {filesToRender.map((f, idx) =>
+                f.saved ? (
+                  <FileBadge key={f.saved.key} file={f.saved} />
+                ) : (
+                  <Badge
+                    key={`${f.name}-${idx}`}
+                    variant="secondary"
+                    className="gap-1"
+                  >
+                    <Paperclip className="size-3" />
+                    {f.name}
+                  </Badge>
+                ),
+              )}
             </div>
           ) : null}
 
@@ -211,6 +447,67 @@ function ProjectSummary({
         </div>
       </div>
     </div>
+  );
+}
+
+function FileBadge({ file }: { file: SavedFile }) {
+  const [busy, setBusy] = useState(false);
+  const [missing, setMissing] = useState(false);
+
+  const open = async () => {
+    if (busy) return;
+    setBusy(true);
+    setMissing(false);
+    try {
+      const stored = await getFile(file.key);
+      if (!stored) {
+        setMissing(true);
+        return;
+      }
+      const blob =
+        stored.blob.type === file.type
+          ? stored.blob
+          : new Blob([stored.blob], { type: file.type });
+      const url = URL.createObjectURL(blob);
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      console.error("Failed to open file", e);
+      setMissing(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      disabled={busy}
+      title={missing ? "File no longer available" : `Open ${file.name}`}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md border border-transparent bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:border-brand/40 hover:bg-brand/10 hover:text-foreground disabled:opacity-60",
+        missing && "opacity-60",
+      )}
+    >
+      <Paperclip className="size-3" />
+      <span className="max-w-[220px] truncate">{file.name}</span>
+      {missing ? (
+        <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+          unavailable
+        </span>
+      ) : (
+        <ExternalLink className="size-3 opacity-60" />
+      )}
+    </button>
   );
 }
 

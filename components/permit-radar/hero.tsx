@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import {
   ArrowRight,
   FileText,
+  FolderKanban,
   Loader2,
   MapPin,
   Paperclip,
@@ -15,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import type { SavedProject } from "@/lib/projects";
 import { cn } from "@/lib/utils";
 
 const SAMPLE_PROMPTS: { label: string; prompt: string }[] = [
@@ -45,10 +47,20 @@ type HeroProps = {
   onAnalyze: (input: { description: string; files: AttachedFile[] }) => void;
   isAnalyzing: boolean;
   errorMessage?: string | null;
+  pendingPrompt?: string;
+  savedProjects?: SavedProject[];
+  onOpenProject?: (id: string) => void;
 };
 
-export function Hero({ onAnalyze, isAnalyzing, errorMessage }: HeroProps) {
-  const [description, setDescription] = useState("");
+export function Hero({
+  onAnalyze,
+  isAnalyzing,
+  errorMessage,
+  pendingPrompt,
+  savedProjects = [],
+  onOpenProject,
+}: HeroProps) {
+  const [description, setDescription] = useState(pendingPrompt ?? "");
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -235,6 +247,27 @@ export function Hero({ onAnalyze, isAnalyzing, errorMessage }: HeroProps) {
             <p className="mt-3 text-left text-xs font-medium text-destructive">
               {localError ?? errorMessage}
             </p>
+          ) : null}
+
+          {savedProjects.length > 0 && onOpenProject ? (
+            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+              <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                <FolderKanban className="size-3.5" />
+                Your projects
+              </span>
+              {savedProjects.slice(0, 6).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  disabled={isAnalyzing}
+                  onClick={() => onOpenProject(p.id)}
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 transition-all hover:border-brand/50 hover:text-foreground disabled:opacity-50"
+                >
+                  <span className="size-1.5 rounded-full bg-brand" />
+                  <span className="max-w-[180px] truncate">{p.name}</span>
+                </button>
+              ))}
+            </div>
           ) : null}
 
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
