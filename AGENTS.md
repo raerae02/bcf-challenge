@@ -1,63 +1,47 @@
-# Permit Radar AI — Plan d’implémentation backend pour hackathon 6h
+# Permit Radar AI — Plan d'implémentation pour hackathon
 
 ## 1. Contexte du challenge
 
 ### Challenge Track #1 — BCF
 
-**Thème :** “Just in Time” Information — AI for Actionable & Time-Sensitive Updates
+**Thème :** "Just in Time" Information — AI for Actionable & Time-Sensitive Updates
 
-Le challenge demande de construire un prototype fonctionnel et scalable qui aide les organisations à surveiller, analyser et interpréter des mises à jour importantes en temps réel.
+Le challenge demande un prototype fonctionnel qui aide les utilisateurs à surveiller, analyser et interpréter des mises à jour réglementaires et législatives importantes en temps réel.
 
-Dans le contexte général du challenge, les organisations doivent surveiller :
-
-- les mises à jour législatives et réglementaires ;
-- les obligations de conformité ;
-- les changements dans les conditions d’utilisation de plateformes technologiques ;
-- les mises à jour provenant de fournisseurs d’IA et de technologie ;
-- les décisions judiciaires ou administratives pertinentes ;
-- tout changement critique pouvant affecter une entreprise ou un secteur.
-
-Le problème n’est pas seulement de trouver l’information. Le vrai problème est de comprendre :
+Le vrai problème n'est pas simplement de trouver l'information. C'est de comprendre :
 
 - **ce qui a changé ;**
-- **pourquoi c’est important ;**
+- **pourquoi c'est important ;**
 - **qui est impacté ;**
-- **à quel point c’est urgent ;**
+- **à quel point c'est urgent ;**
 - **quelle action devrait être prise.**
 
-Les newsletters et alertes génériques ne suffisent plus. Le but est de construire un système qui transforme le bruit informationnel en intelligence actionnable.
+Les newsletters et alertes génériques ne suffisent plus. Le but est de transformer le bruit informationnel en intelligence actionnable, adaptée au contexte de chaque utilisateur.
 
 ---
 
-## 2. Spécialisation choisie par notre équipe
+## 2. Spécialisation et utilisateur ciblé
 
-Notre équipe a choisi de spécialiser le projet dans le domaine suivant :
+Notre équipe a choisi un domaine spécifique et un utilisateur spécifique.
 
-# Permis, construction, zonage et conformité réglementaire
+### Domaine
 
-L’application ne vise pas tous les domaines juridiques. Elle se concentre sur les changements qui peuvent affecter :
+**Permis, construction, zonage, immobilier et conformité réglementaire au Québec.**
 
-- les permis de construction ;
-- les permis de rénovation ;
-- les changements d’usage ;
-- les projets immobiliers ;
-- le zonage municipal ;
-- les règlements municipaux ;
-- le Code de construction ;
-- les exigences documentaires ;
-- les décisions judiciaires ou administratives pertinentes, notamment via CanLII ;
-- les risques de refus ou de retard dans l’approbation d’un permis.
+### Utilisateur principal
 
-Cette spécialisation rend le projet plus concret, plus démontrable et plus utile pour un cabinet comme BCF, notamment pour des clients en :
+**Petites entreprises et entrepreneurs** qui lancent un projet de construction ou un commerce nécessitant des permis (ex : ouvrir une boulangerie au centre-ville de Montréal, rénover un local commercial, construire un immeuble résidentiel).
 
-- immobilier ;
-- construction ;
-- droit municipal ;
-- droit de l’environnement ;
-- développement urbain ;
-- architecture ;
-- ingénierie ;
-- promotion immobilière.
+Ces utilisateurs n'ont généralement pas :
+
+- d'avocat à temps plein ;
+- de connaissance approfondie du droit municipal ou du Code de construction ;
+- les ressources pour suivre toutes les mises à jour réglementaires pertinentes.
+
+### Utilisateurs secondaires
+
+- **Investisseurs** : utilisent l'outil pour faire de la diligence raisonnable sur les projets qu'ils financent.
+- **Cabinets d'avocats** (comme BCF) : utilisent l'outil comme point de départ pour la recherche ou pour offrir un service à leurs clients PME.
 
 ---
 
@@ -77,90 +61,108 @@ Cette spécialisation rend le projet plus concret, plus démontrable et plus uti
 
 ## 4. Problème précis résolu
 
-Dans la construction, un changement réglementaire ou administratif peut avoir des conséquences directes sur un projet :
+Un entrepreneur qui veut ouvrir une boulangerie à Montréal doit naviguer :
 
-- retard d’émission du permis ;
-- refus de permis ;
-- demande de documents supplémentaires ;
-- modification des plans ;
-- coûts additionnels ;
-- risques juridiques ;
-- non-conformité au zonage ;
-- problèmes avec le Code de construction ;
-- exigences plus strictes en matière de sécurité incendie, accessibilité, verdissement, stationnement, patrimoine ou usage.
+- des règlements municipaux (zonage, occupation, signalisation, terrasses) ;
+- des permis provinciaux (MAPAQ pour la nourriture, RBQ pour la construction) ;
+- des règles d'arrondissement (chaque arrondissement a ses propres règles) ;
+- le Code de construction du Québec ;
+- des décisions judiciaires pertinentes (CanLII) ;
+- des changements fréquents à toutes ces sources.
 
-Les équipes de projet doivent souvent suivre plusieurs sources en même temps :
+Sans avocat, c'est presque impossible à gérer. Et même avec un avocat, suivre les _changements_ à chaque source est coûteux.
 
-- sites municipaux ;
-- règlements de zonage ;
-- guides de dépôt de permis ;
-- Code de construction ;
-- décisions CanLII ;
-- mises à jour de procédures administratives ;
-- communications des arrondissements ou municipalités.
+Permit Radar AI répond à deux questions principales :
 
-La difficulté est de répondre rapidement aux questions suivantes :
-
-1. Est-ce que ce changement touche notre projet ?
-2. Est-ce qu’il peut retarder le permis ?
-3. Est-ce qu’on doit modifier les plans ?
-4. Quels documents doivent être ajoutés ?
-5. Qui dans l’équipe doit agir ?
-6. Est-ce urgent ?
-
-Permit Radar AI répond à ces questions avec une analyse générée par IA et fondée sur les documents disponibles.
+1. **Quel est le paysage réglementaire complet de mon projet ?** (snapshot initial)
+2. **Qu'est-ce qui a changé depuis la dernière fois et est-ce que ça m'affecte ?** (monitoring continu)
 
 ---
 
 ## 5. Solution proposée
 
-Permit Radar AI est une API backend qui permet de :
+Permit Radar AI est une application Next.js full-stack qui permet à un utilisateur de :
 
-1. charger des profils de projets de construction ;
-2. charger des alertes réglementaires, municipales, administratives ou judiciaires ;
-3. analyser l’impact d’une alerte sur un projet spécifique avec l’IA ;
-4. répondre à des questions à partir de documents sources avec un mini RAG ;
-5. comparer un ancien texte et un nouveau texte pour expliquer ce qui a changé ;
-6. exposer des endpoints simples pour un frontend éventuel.
+1. **Décrire son projet en langage naturel** (ex : "Je veux ouvrir une boulangerie de 800 pi² rue Saint-Denis avec terrasse").
+2. **Obtenir un profil structuré du projet** généré par l'IA (type d'activité, localisation, contraintes).
+3. **Recevoir un snapshot réglementaire complet** : toutes les lois, règlements et permis pertinents avec un score de risque pour chacun.
+4. **Voir les changements récents** qui affectent ce profil de projet, classés par urgence.
+5. **Poser des questions en langage naturel** sur les sources réglementaires (RAG sur documents).
+6. **Recevoir un rapport de risque** avec actions recommandées.
 
-Le prototype doit démontrer que l’IA peut transformer une mise à jour brute en analyse utile.
+Le prototype démontre que l'IA peut transformer une description simple en analyse réglementaire complète et personnalisée.
 
 ---
 
-## 6. Ce que l’application doit produire
+## 6. Ce que l'application doit produire
 
-Pour chaque alerte, l’application doit être capable de générer :
+### 6.1 Snapshot réglementaire (output principal)
 
-- un résumé exécutif ;
-- ce qui a changé ;
-- pourquoi c’est important ;
-- l’impact spécifique sur le projet ;
-- le niveau de risque ;
-- le niveau d’urgence ;
-- les actions recommandées ;
-- le raisonnement basé sur les sources ;
-- un avertissement indiquant que ce n’est pas un avis juridique.
-
-Exemple de sortie attendue :
+Pour un projet décrit par l'utilisateur, le système produit :
 
 ```json
 {
-  "executiveSummary": "The new green space requirement may affect the Rosemont residential project because it is a 6-storey residential construction currently preparing its permit application.",
-  "whatChanged": "Residential projects of 4 storeys or more must now demonstrate compliance with a minimum landscaped green space ratio before permit approval.",
-  "whyItMatters": "If the site plan does not show sufficient landscaped areas, the permit application may be delayed or require redesign.",
-  "projectSpecificImpact": "The project is directly impacted because it is residential, multi-storey, located in Montreal, and still in the pre-submission stage.",
-  "riskLevel": "High",
-  "urgency": "High",
-  "recommendedActions": [
-    "Review the site plan for landscaped and permeable areas.",
-    "Confirm the minimum green space requirement with the borough.",
-    "Update the permit submission package before filing.",
-    "Ask the design team to validate whether redesign is required."
+  "projectProfile": {
+    "businessType": "bakery",
+    "activities": ["food_preparation", "retail_sales", "outdoor_seating"],
+    "location": { "city": "Montréal", "borough": "Plateau-Mont-Royal" },
+    "scale": { "squareFeet": 800, "employees": 4 }
+  },
+  "regulatorySnapshot": {
+    "totalApplicableRules": 14,
+    "riskOverview": "Medium",
+    "rules": [
+      {
+        "id": "mapaq_food_permit",
+        "title": "Permis d'exploitation de restaurant (MAPAQ)",
+        "category": "Food Safety",
+        "jurisdiction": "Quebec",
+        "applies": "Required for any establishment preparing food for sale.",
+        "summary": "Le MAPAQ exige un permis d'exploitation pour tout établissement préparant des aliments. Inclut une formation en hygiène et une inspection.",
+        "riskLevel": "High",
+        "estimatedTimeline": "30-60 jours",
+        "estimatedCost": "150-250 $",
+        "recentChanges": [],
+        "officialUrl": "https://www.mapaq.gouv.qc.ca/..."
+      }
+    ]
+  },
+  "recentAlerts": [
+    {
+      "id": "a1",
+      "title": "New green space requirement for residential permit applications",
+      "affectsThisProject": true,
+      "urgency": "High",
+      "summary": "Les projets résidentiels de 4 étages ou plus doivent maintenant démontrer un ratio minimum d'espace vert avant l'approbation du permis.",
+      "recommendedAction": "Vérifier le plan de site pour les espaces verts."
+    }
   ],
-  "sourceBasedReasoning": "The source indicates that projects of 4 storeys or more must demonstrate green space compliance before permit approval.",
-  "disclaimer": "This is legal and permitting information, not legal advice. A qualified professional should review the issue."
+  "riskReport": {
+    "executiveSummary": "Ce projet de boulangerie présente un risque modéré principalement en raison des exigences MAPAQ et des règles de terrasse.",
+    "topRisks": [
+      "Permis MAPAQ requis avec délai de 30-60 jours",
+      "Règles de terrasse strictes dans le Plateau",
+      "Inspection sécurité incendie obligatoire"
+    ],
+    "recommendedActions": [
+      "Démarrer la demande MAPAQ avant la signature du bail",
+      "Vérifier les règles de terrasse de l'arrondissement Plateau-Mont-Royal",
+      "Obtenir attestations électriques et plomberie avant les inspections"
+    ],
+    "disclaimer": "Ceci est de l'information juridique, pas un avis juridique."
+  }
 }
 ```
+
+### 6.2 Analyse de changement (pour les alertes)
+
+Pour chaque changement détecté affectant un projet, l'application génère :
+
+- ce qui a changé ;
+- pourquoi c'est important pour CE projet ;
+- niveau de risque et urgence ;
+- actions recommandées ;
+- avertissement légal.
 
 ---
 
@@ -238,52 +240,50 @@ Même si le pitch est géré par une autre personne, le backend doit supporter u
 
 ---
 
-## 8. Scope réaliste en 6h
-
-Le temps est très limité. Il ne faut pas construire une plateforme complète.
-
-## Ce qu’on construit
+## 8. Ce qu'on construit
 
 - Application full-stack Next.js 15 (TypeScript + Tailwind + shadcn/ui).
-- API routes Next.js (`app/api/*`).
-- Lecture de données JSON pour les projets, alertes et documents sources.
-- Analyse IA via Google Gemini 2.5 Flash sur Vertex AI.
-- Mini RAG keyword-based sur fichiers `.txt` locaux.
-- Réponses IA structurées en JSON.
-- Frontend démontrable : liste de projets, liste d'alertes, dashboard d'analyse, vue chronologique avec marqueurs d'expiration.
+- API routes Next.js (`app/api/*`) — pas de serveur séparé.
+- Lecture de données JSON pour règlements, alertes et documents sources.
+- Extraction de profil de projet par l'IA (Gemini 2.5 Flash via Vertex AI).
+- Matching IA + déterministe entre profils et règlements.
+- Snapshot réglementaire personnalisé par projet.
+- Système d'alertes pour les changements récents pertinents.
+- Mini RAG keyword-based sur fichiers `.txt` pour le chat.
+- Frontend démontrable : page d'input, snapshot dashboard, vue détail règlement, chat.
+- Support bilingue FR/EN basique.
 
-## Ce qu’on ne construit pas
+### Ce qu'on ne construit pas
 
-- Pas de serveur backend séparé — tout vit dans le projet Next.js.
-- Pas de base de données réelle (les fichiers JSON suffisent pour la démo).
-- Pas d'authentification réelle.
-- Pas d'Active Directory ni de SSO.
+- Pas de serveur backend séparé.
+- Pas de base de données réelle (JSON suffit).
+- Pas d'authentification.
 - Pas de scraping en direct des sites municipaux.
-- Pas d'intégration CanLII réelle (on utilise des extraits de décisions chargés manuellement).
-- Pas d'OCR ni de parsing PDF avancé.
-- Pas de vector database.
-- Pas d'embeddings sémantiques.
-- Pas de microservices ni de Kubernetes.
-- Pas de Prisma ni de NestJS.
-
-
-Ces éléments peuvent être mentionnés comme évolution future ou architecture enterprise, mais pas implémentés dans les 6h.
+- Pas d'intégration CanLII automatisée.
+- Pas d'OCR ni de PDF parsing.
+- Pas de vector DB ni d'embeddings (RAG keyword-based suffit pour la démo).
 
 ---
 
 ## 9. Stack technique choisie
 
-## Backend
+### Frontend + Backend (Next.js full-stack)
 
 - Node.js 20+
 - TypeScript
 - Next.js 15 (App Router)
 - React 19
 - Tailwind CSS
-- shadcn/ui (composants UI préfabriqués)
-- Zod (validation des inputs API)
-- Gemini 4.5 flash
+- shadcn/ui
+- lucide-react
+- Zod
 
+### IA
+
+- Google Gemini 2.5 Flash.
+- Accès via Vertex AI (Google Cloud)
+- SDK : `@google/genai`
+- Génération JSON structurée native.
 
 ## Données
 
@@ -293,7 +293,6 @@ Ces éléments peuvent être mentionnés comme évolution future ou architecture
 ## IA
 
 - Google Gemini 2.5 Flash
-- Accès via Vertex AI (Google Cloud)
 - SDK : `@google/genai`
 
 ## RAG
@@ -404,7 +403,12 @@ Réponse :
     "height": "6 storeys",
     "units": 48,
     "permitStage": "Preparing application",
-    "sensitiveFactors": ["multi-storey", "residential", "landscaping", "fire safety"]
+    "sensitiveFactors": [
+      "multi-storey",
+      "residential",
+      "landscaping",
+      "fire safety"
+    ]
   }
 ]
 ```
@@ -450,7 +454,10 @@ Exemple d’alerte :
   "risk": "Permit delay or redesign required",
   "oldText": "Residential projects must include adequate outdoor space where applicable.",
   "newText": "Residential projects of 4 storeys or more must include a minimum landscaped green space ratio before permit approval.",
-  "documentRefs": ["montreal_green_space_old.txt", "montreal_green_space_new.txt"]
+  "documentRefs": [
+    "montreal_green_space_old.txt",
+    "montreal_green_space_new.txt"
+  ]
 }
 ```
 
@@ -529,10 +536,7 @@ Output :
 ```json
 {
   "answer": "...",
-  "sources": [
-    "montreal_green_space_new.txt",
-    "canlii_permit_refusal.txt"
-  ]
+  "sources": ["montreal_green_space_new.txt", "canlii_permit_refusal.txt"]
 }
 ```
 
