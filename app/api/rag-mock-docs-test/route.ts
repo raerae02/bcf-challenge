@@ -95,6 +95,8 @@ export async function GET() {
         documentId: result.documentId,
         fileName: result.fileName,
         score: result.score,
+        vectorScore: result.vectorScore,
+        bm25Score: result.bm25Score,
       })),
     });
   } catch (error) {

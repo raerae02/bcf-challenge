@@ -53,6 +53,8 @@ export type DocumentChunk = {
 
 export type ScoredDocumentChunk = DocumentChunk & {
   score?: number;
+  vectorScore?: number;
+  bm25Score?: number;
 };
 
 export type ImpactNotification = {
