@@ -37,6 +37,28 @@ export type ProjectProfile = {
   considerations: string[];
 };
 
+export type DocumentSubClause = {
+  id: string;
+  title: string;
+  type: "section" | "clause" | "subclause" | "paragraph" | "schedule" | "other";
+  pageStart: number | null;
+  pageEnd: number | null;
+  text: string;
+  keyObligations: string[];
+  riskSignals: string[];
+  parties: string[];
+  tags: string[];
+  children?: DocumentSubClause[];
+};
+
+export type AnalyzedProjectDocument = {
+  filename: string;
+  documentType: string;
+  title: string;
+  summary: string;
+  clauses: DocumentSubClause[];
+};
+
 export type AnalyzedRegulation = Regulation & {
   personalizedSummary: string;
   whyItApplies: string;
@@ -55,4 +77,6 @@ export type RegulatorySnapshot = {
     recommendedActions: string[];
     disclaimer: string;
   };
+  attachedFilesProcessed?: { filename: string }[];
+  analyzedDocuments?: AnalyzedProjectDocument[];
 };

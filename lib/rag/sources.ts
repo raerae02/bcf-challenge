@@ -39,6 +39,7 @@ const STOP_WORDS = new Set([
   "was",
   "were",
 ]);
+const CLAUSE_TYPES = new Set(["section", "clause", "subclause", "paragraph", "schedule", "other"]);
 
 function tokenize(text: string) {
   return (
@@ -118,6 +119,19 @@ function docToChunk(doc: FirebaseFirestore.QueryDocumentSnapshot): DocumentChunk
     chunkIndex: Number(data.chunkIndex || 0),
     text: String(data.text || ""),
     embedding: normalizeEmbedding(data.embedding),
+    clauseId: typeof data.clauseId === "string" ? data.clauseId : undefined,
+    clauseTitle: typeof data.clauseTitle === "string" ? data.clauseTitle : undefined,
+    clauseType:
+      typeof data.clauseType === "string" && CLAUSE_TYPES.has(data.clauseType)
+        ? data.clauseType as DocumentChunk["clauseType"]
+        : undefined,
+    pageStart: typeof data.pageStart === "number" ? data.pageStart : null,
+    pageEnd: typeof data.pageEnd === "number" ? data.pageEnd : null,
+    keyObligations: Array.isArray(data.keyObligations) ? data.keyObligations : undefined,
+    riskSignals: Array.isArray(data.riskSignals) ? data.riskSignals : undefined,
+    parties: Array.isArray(data.parties) ? data.parties : undefined,
+    tags: Array.isArray(data.tags) ? data.tags : undefined,
+    path: Array.isArray(data.path) ? data.path : undefined,
     createdAt: typeof data.createdAt === "string" ? data.createdAt : undefined,
   };
 }
