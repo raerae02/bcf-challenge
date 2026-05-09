@@ -41,12 +41,16 @@ function stripUndefined<T>(value: T): T {
 
 async function loadProject(projectId: string): Promise<Project | null> {
   const snapshot = await db.collection("projects").doc(projectId).get();
-  return snapshot.exists ? ({ id: snapshot.id, ...snapshot.data() } as Project) : null;
+  return snapshot.exists
+    ? ({ id: snapshot.id, ...snapshot.data() } as Project)
+    : null;
 }
 
 async function loadLaw(lawId: string): Promise<LawUpdate | null> {
   const snapshot = await db.collection("laws").doc(lawId).get();
-  return snapshot.exists ? ({ id: snapshot.id, ...snapshot.data() } as LawUpdate) : null;
+  return snapshot.exists
+    ? ({ id: snapshot.id, ...snapshot.data() } as LawUpdate)
+    : null;
 }
 
 function lawTextForSearch(law: LawUpdate) {
@@ -55,7 +59,6 @@ function lawTextForSearch(law: LawUpdate) {
     fallbackStructuredLaw({
       title: law.title,
       source: law.source,
-      sourceUrl: law.sourceUrl,
       jurisdiction: law.jurisdiction,
       category: law.category,
       urgency: law.urgency,
@@ -114,7 +117,9 @@ export async function runImpactScanForProject({
   };
 }
 
-export async function createImpactNotificationFromScan(scan: ImpactScanDraft) {
+export async function createImpactNotificationFromScan(
+  scan: ImpactScanDraft,
+): Promise<ImpactNotification | null> {
   if (scan.affectedDocuments.length === 0) {
     return null;
   }
@@ -132,9 +137,10 @@ export async function createImpactNotificationFromScan(scan: ImpactScanDraft) {
     read: false,
   };
 
-  await db.collection("notifications").doc(notificationId).set(stripUndefined(notification), {
-    merge: true,
-  });
+  await db
+    .collection("notifications")
+    .doc(notificationId)
+    .set(stripUndefined(notification), { merge: true });
 
   return notification;
 }
@@ -187,7 +193,10 @@ export async function runMonitoringForLaw({
 
       const notification = await createImpactNotificationFromScan(scan);
       affectedProjects += 1;
-      if (notification) notificationsCreated += 1;
+
+      if (notification) {
+        notificationsCreated += 1;
+      }
 
       results.push({
         projectId: project.id,
