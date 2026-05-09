@@ -15,6 +15,9 @@ import type {
 } from "@/lib/types";
 import type { StructuredDocument } from "@/lib/rag/types";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 const EXTRACT_PROFILE_PROMPT = `You are an expert in Quebec and Montreal business regulations.
 
 Extract structured information about a business venture from the user's description AND any attached documents (project plans, contracts, leases, business plans).

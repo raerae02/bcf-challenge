@@ -1,10 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  vertexai: true,
-  project: process.env.GOOGLE_CLOUD_PROJECT,
-  location: "us-central1",
-});
+const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+
+const ai = apiKey
+  ? new GoogleGenAI({ apiKey })
+  : new GoogleGenAI({
+      vertexai: true,
+      project: process.env.GOOGLE_CLOUD_PROJECT,
+      location: process.env.GOOGLE_CLOUD_LOCATION || "us-central1",
+    });
 
 const MODEL = "gemini-2.5-flash";
 
