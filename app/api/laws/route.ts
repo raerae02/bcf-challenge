@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase-admin";
 import { createStructuredLaw, type RawLawInput } from "@/lib/rag/laws";
+import { runMonitoringForLaw } from "@/lib/rag/monitoring";
 import type { ImpactUrgency, LawUpdate } from "@/lib/rag/types";
 
 const VALID_URGENCY = new Set(["Low", "Medium", "High", "Critical"]);
@@ -25,6 +26,8 @@ function parseLawInput(value: unknown): RawLawInput {
   return {
     title: String(body.title).trim(),
     source: String(body.source).trim(),
+    sourceUrl: typeof body.sourceUrl === "string" ? body.sourceUrl.trim() : undefined,
+    seedId: typeof body.seedId === "string" ? body.seedId.trim() : undefined,
     jurisdiction: String(body.jurisdiction).trim(),
     category: String(body.category).trim(),
     urgency: body.urgency as ImpactUrgency,
@@ -39,8 +42,21 @@ export async function POST(req: NextRequest) {
   try {
     const input = parseLawInput(await req.json());
     const law = await createStructuredLaw(input);
+    let monitoring;
 
-    return NextResponse.json({ law });
+    try {
+      monitoring = await runMonitoringForLaw({ law });
+    } catch (error) {
+      monitoring = {
+        scannedProjects: 0,
+        affectedProjects: 0,
+        notificationsCreated: 0,
+        results: [],
+        error: error instanceof Error ? error.message : "Unable to run law monitoring.",
+      };
+    }
+
+    return NextResponse.json({ law, monitoring });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to create law." },

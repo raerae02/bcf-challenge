@@ -16,8 +16,10 @@ export type Project = {
 
 export type LawUpdate = {
   id: string;
+  seedId?: string;
   title: string;
   source: string;
+  sourceUrl?: string;
   jurisdiction: string;
   category: string;
   urgency: ImpactUrgency;
@@ -67,6 +69,7 @@ export type StructuredDocument = {
 export type StructuredLawUpdate = {
   title: string;
   source: string;
+  sourceUrl?: string;
   jurisdiction: string;
   category: string;
   urgency: ImpactUrgency;
@@ -118,10 +121,7 @@ export type ImpactNotification = {
   affectedDocuments: {
     documentId: string;
     fileName: string;
-    impactLevel: ImpactUrgency;
-    reason: string;
-    recommendedAction: string;
-    matchingChunkIds?: string[];
+    affectedSubclauses: AffectedSubclause[];
   }[];
   createdAt: string;
   read: boolean;
