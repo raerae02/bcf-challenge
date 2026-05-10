@@ -1,5 +1,10 @@
-import { db } from "@/lib/firebase-admin";
-import { analyzeAffectedSubclausesWithGemini } from "@/lib/rag/impact";
+import {
+  getLaw,
+  getProject,
+  listProjects,
+  upsertNotification,
+} from "@/lib/db";
+import { analyzeAffectedSubclausesWithAI } from "@/lib/rag/impact";
 import { buildStructuredLawEmbeddingText, fallbackStructuredLaw } from "@/lib/rag/laws";
 import { findRelevantChunksForLaw } from "@/lib/rag/sources";
 import type { ImpactNotification, ImpactScanDraft, LawUpdate, Project } from "@/lib/rag/types";
@@ -23,34 +28,12 @@ export type MonitoringSummary = {
   results: MonitoringProjectResult[];
 };
 
-function stripUndefined<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value.map(stripUndefined) as T;
-  }
-
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value)
-        .filter(([, entry]) => entry !== undefined)
-        .map(([key, entry]) => [key, stripUndefined(entry)]),
-    ) as T;
-  }
-
-  return value;
-}
-
 async function loadProject(projectId: string): Promise<Project | null> {
-  const snapshot = await db.collection("projects").doc(projectId).get();
-  return snapshot.exists
-    ? ({ id: snapshot.id, ...snapshot.data() } as Project)
-    : null;
+  return getProject(projectId);
 }
 
 async function loadLaw(lawId: string): Promise<LawUpdate | null> {
-  const snapshot = await db.collection("laws").doc(lawId).get();
-  return snapshot.exists
-    ? ({ id: snapshot.id, ...snapshot.data() } as LawUpdate)
-    : null;
+  return getLaw(lawId);
 }
 
 function lawTextForSearch(law: LawUpdate) {
@@ -59,6 +42,7 @@ function lawTextForSearch(law: LawUpdate) {
     fallbackStructuredLaw({
       title: law.title,
       source: law.source,
+      sourceUrl: law.sourceUrl,
       jurisdiction: law.jurisdiction,
       category: law.category,
       urgency: law.urgency,
@@ -102,7 +86,7 @@ export async function runImpactScanForProject({
     lawText: lawTextForSearch(loadedLaw),
     topK,
   });
-  const impact = await analyzeAffectedSubclausesWithGemini({
+  const impact = await analyzeAffectedSubclausesWithAI({
     project: loadedProject,
     law: loadedLaw,
     chunks: retrievedSubclauses,
@@ -137,10 +121,7 @@ export async function createImpactNotificationFromScan(
     read: false,
   };
 
-  await db
-    .collection("notifications")
-    .doc(notificationId)
-    .set(stripUndefined(notification), { merge: true });
+  await upsertNotification(notification);
 
   return notification;
 }
@@ -152,11 +133,7 @@ export async function runMonitoringForLaw({
   law: LawUpdate;
   topK?: number;
 }): Promise<MonitoringSummary> {
-  const projectsSnapshot = await db.collection("projects").get();
-  const projects = projectsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Project[];
+  const projects = await listProjects();
   const results: MonitoringProjectResult[] = [];
   let affectedProjects = 0;
   let notificationsCreated = 0;

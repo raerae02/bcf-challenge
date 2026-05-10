@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { chunkText } from "@/lib/chunking";
+import { insertDocument, upsertDocumentChunk, upsertProject } from "@/lib/db";
 import { generateEmbedding } from "@/lib/embeddings";
-import { db } from "@/lib/firebase-admin";
 import { findRelevantChunksForLaw } from "@/lib/vector-search";
 
 const projectId = "mock-rag-project";
@@ -45,11 +45,23 @@ export async function GET() {
     "Residential projects of 4 storeys or more must include landscaped green space and permeable paving before permit approval.";
 
   try {
+    await upsertProject({
+      id: projectId,
+      name: "Mock RAG Project",
+      location: "Montreal",
+      borough: "Rosemont-La Petite-Patrie",
+      projectType: "New Construction",
+      use: "Residential",
+      height: "6 storeys",
+      sensitiveFactors: ["residential", "landscaping", "fire safety"],
+      createdAt: new Date().toISOString(),
+    });
+
     await Promise.all(
       mockDocuments.map(async (document) => {
         const chunks = chunkText(document.text);
 
-        await db.collection("documents").doc(document.documentId).set({
+        await insertDocument({
           id: document.documentId,
           projectId,
           fileName: document.fileName,
@@ -63,7 +75,7 @@ export async function GET() {
             const chunkId = `${document.documentId}-chunk-${chunkIndex}`;
             const embedding = await generateEmbedding(chunk);
 
-            await db.collection("documentChunks").doc(chunkId).set({
+            await upsertDocumentChunk({
               id: chunkId,
               projectId,
               documentId: document.documentId,

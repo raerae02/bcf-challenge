@@ -1,6 +1,6 @@
-import { db } from "@/lib/firebase-admin";
+import { insertDocument, newId, upsertDocumentChunk } from "@/lib/db";
 import { generateEmbedding } from "@/lib/embeddings";
-import { callGeminiJSON, type FileInput } from "@/lib/gemini";
+import { callAIJSON, type FileInput } from "@/lib/ai";
 import type { ProcessedFile } from "@/lib/fileParser";
 import type { StructuredClause, StructuredDocument } from "@/lib/rag/types";
 
@@ -96,7 +96,7 @@ export function fallbackClausesFromInlineText(file: {
       documentType: "PDF or native document",
       title: file.filename,
       summary:
-        "Document was provided as a native file. Clause extraction requires Gemini review of the attachment.",
+        "Document was provided as a native file. Clause extraction requires AI review of the attachment.",
       clauses: [
         {
           id: normalizeClauseId(file.filename, 0),
@@ -205,11 +205,11 @@ export function normalizeDocumentStructure(
 export async function analyzeDocumentStructure({
   combinedPrompt,
   files,
-  geminiFiles,
+  aiFiles,
 }: {
   combinedPrompt: string;
   files: ProcessedFile[];
-  geminiFiles: FileInput[];
+  aiFiles: FileInput[];
 }): Promise<StructuredDocument[]> {
   const documentStructurePrompt = [
     combinedPrompt,
@@ -221,10 +221,10 @@ export async function analyzeDocumentStructure({
   ].join("\n");
 
   try {
-    const documentStructure = await callGeminiJSON<DocumentStructureResponse>(
+    const documentStructure = await callAIJSON<DocumentStructureResponse>(
       documentStructurePrompt,
       EXTRACT_DOCUMENT_STRUCTURE_PROMPT,
-      geminiFiles,
+      aiFiles,
     );
 
     return normalizeDocumentStructure(documentStructure, files);
@@ -275,12 +275,6 @@ export function buildSubclauseEmbeddingText(
     .join("\n");
 }
 
-function definedFields<T extends Record<string, unknown>>(value: T) {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, entry]) => entry !== undefined),
-  );
-}
-
 export async function createDocumentWithSubclauseVectors({
   projectId,
   file,
@@ -291,39 +285,34 @@ export async function createDocumentWithSubclauseVectors({
   analyzedDocument: StructuredDocument;
 }) {
   const now = new Date().toISOString();
-  const documentRef = db.collection("documents").doc();
+  const documentId = newId("doc");
   const flatClauses = flattenDocumentClauses(analyzedDocument).filter(
     ({ clause }) =>
       clause.text.trim().length > 0 || clause.title.trim().length > 0,
   );
-  const batch = db.batch();
 
-  batch.set(
-    documentRef,
-    definedFields({
-      id: documentRef.id,
-      projectId,
-      fileName: file.filename,
-      type: analyzedDocument.documentType,
-      summary: analyzedDocument.summary,
-      tags: Array.from(
-        new Set(flatClauses.flatMap(({ clause }) => clause.tags)),
-      ),
-      text: file.inlineText ?? undefined,
-      structured: analyzedDocument,
-      createdAt: now,
-    }),
-  );
+  await insertDocument({
+    id: documentId,
+    projectId,
+    fileName: file.filename,
+    type: analyzedDocument.documentType,
+    summary: analyzedDocument.summary,
+    tags: Array.from(
+      new Set(flatClauses.flatMap(({ clause }) => clause.tags)),
+    ),
+    text: file.inlineText ?? undefined,
+    structured: analyzedDocument,
+    createdAt: now,
+  });
 
   for (const [chunkIndex, { clause, path }] of flatClauses.entries()) {
-    const chunkRef = db.collection("documentChunks").doc();
     const text = buildSubclauseEmbeddingText(clause, analyzedDocument);
     const embedding = await generateEmbedding(text);
 
-    batch.set(chunkRef, {
-      id: chunkRef.id,
+    await upsertDocumentChunk({
+      id: newId("chunk"),
       projectId,
-      documentId: documentRef.id,
+      documentId,
       fileName: file.filename,
       chunkIndex,
       text,
@@ -342,10 +331,8 @@ export async function createDocumentWithSubclauseVectors({
     });
   }
 
-  await batch.commit();
-
   return {
-    documentId: documentRef.id,
+    documentId,
     chunkCount: flatClauses.length,
   };
 }

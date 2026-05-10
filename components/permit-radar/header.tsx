@@ -1,5 +1,5 @@
-import { Radar, Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Radar } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type HeaderProps = {
   onReset?: () => void;
@@ -8,39 +8,50 @@ type HeaderProps = {
 
 export function AppHeader({ onReset, showReset }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <button
           type="button"
           onClick={onReset}
           className="group flex items-center gap-2 text-left"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-brand text-brand-foreground ring-1 ring-foreground/10">
-            <Radar className="size-4" />
+          <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Radar className="size-5" />
           </span>
-          <span className="flex flex-col leading-tight">
-            <span className="font-heading text-sm font-semibold tracking-tight">
-              Regulation Radar AI
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Smart permit and compliance monitoring
-            </span>
+          <span className="text-lg font-semibold tracking-tight">
+            Permit Radar AI
           </span>
         </button>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1">
-            <Sparkles className="size-3" />
-            Gemini 2.5 · BCF Hackathon
-          </Badge>
+        <nav className="hidden items-center gap-8 md:flex">
+          <a
+            href="#features"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Features
+          </a>
+          <a
+            href="#how-it-works"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            How It Works
+          </a>
+          <a
+            href="#dashboard"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Dashboard
+          </a>
+        </nav>
+        <div className="flex items-center gap-3">
           {showReset && onReset ? (
-            <button
-              type="button"
-              onClick={onReset}
-              className="text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
+            <Button variant="ghost" size="sm" onClick={onReset}>
               New project
-            </button>
+            </Button>
           ) : null}
+          <Button size="sm" onClick={onReset}>
+            Get Started
+            <ArrowRight className="size-4" />
+          </Button>
         </div>
       </div>
     </header>

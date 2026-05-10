@@ -165,8 +165,8 @@ export default function Home() {
 
   useEffect(() => {
     if (stage !== "ready" || !activeId || !activeProject) {
-      setNotifications([]);
-      return;
+      const timeoutId = window.setTimeout(() => setNotifications([]), 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     let cancelled = false;
@@ -219,7 +219,7 @@ export default function Home() {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [notificationScope, stage]);
+  }, [activeId, activeProject, activeProjectFileKey, notificationScope, stage]);
 
   return (
     <>
@@ -253,8 +253,8 @@ export default function Home() {
       </main>
       <footer className="border-t border-border py-6">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-4 text-xs text-muted-foreground sm:flex-row sm:px-6">
-          <span>© Regulation Radar AI · BCF Hackathon prototype</span>
-          <span>AI-generated legal information — not legal advice.</span>
+          <span>© Permit Radar AI · Local compliance monitoring prototype</span>
+          <span>AI-generated legal information - not legal advice.</span>
         </div>
       </footer>
     </>

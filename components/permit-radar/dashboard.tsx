@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowUpRight,
+  AlertTriangle,
   Bell,
   Briefcase,
   Building2,
@@ -23,6 +24,7 @@ import {
   Send,
   Shield,
   Sparkles,
+  TrendingUp,
   Trash2,
   Users,
 } from "lucide-react";
@@ -105,7 +107,7 @@ export function Dashboard({
   );
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+    <section className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6">
       <ProjectSwitcher
         projects={projects}
         activeId={activeId}
@@ -113,6 +115,22 @@ export function Dashboard({
         onNewProject={onNewProject}
         onDeleteProject={onDeleteProject}
         onRenameProject={onRenameProject}
+      />
+
+      <DashboardStats
+        projects={projects}
+        ruleCount={rules.length}
+        alertCount={alertCount}
+        notifications={notifications}
+        overall={overallWithNotifications}
+      />
+
+      <OverviewPanels
+        projects={projects}
+        activeId={activeId}
+        notifications={notifications}
+        recentAlerts={recentAlerts}
+        onSelectProject={onSelectProject}
       />
 
       <ProjectSummary
@@ -125,7 +143,7 @@ export function Dashboard({
         attachedFiles={snapshot.attachedFilesProcessed}
       />
 
-      <Tabs defaultValue="snapshot" className="mt-8">
+      <Tabs defaultValue="snapshot">
         <TabsList
           variant="line"
           className="w-full justify-start gap-4 border-b border-border pb-2"
@@ -163,7 +181,7 @@ export function Dashboard({
           <RiskReportView report={riskReport} overall={overallWithNotifications} />
         </TabsContent>
         <TabsContent value="chat" className="mt-6">
-          <ChatView profile={projectProfile} />
+          <ChatView profile={projectProfile} projectId={activeId} />
         </TabsContent>
       </Tabs>
     </section>
@@ -355,6 +373,239 @@ function ProjectSwitcher({
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function DashboardStats({
+  projects,
+  ruleCount,
+  alertCount,
+  notifications,
+  overall,
+}: {
+  projects: SavedProject[];
+  ruleCount: number;
+  alertCount: number;
+  notifications: ImpactNotification[];
+  overall: RiskLevel;
+}) {
+  const documentsAnalyzed = projects.reduce(
+    (sum, project) =>
+      sum +
+      (project.files?.length ??
+        project.snapshot.attachedFilesProcessed?.length ??
+        0),
+    0,
+  );
+  const stats = [
+    {
+      label: "Active Projects",
+      value: String(projects.length),
+      icon: FolderKanban,
+      change: projects.length === 1 ? "1 saved project" : `${projects.length} saved projects`,
+    },
+    {
+      label: "Documents Analyzed",
+      value: String(documentsAnalyzed),
+      icon: FileText,
+      change: "Clause-level extraction",
+    },
+    {
+      label: "Active Alerts",
+      value: String(alertCount),
+      icon: AlertTriangle,
+      change:
+        notifications.length > 0
+          ? `${notifications.length} generated from monitoring`
+          : "No generated notifications yet",
+    },
+    {
+      label: "Risk Level",
+      value: overall,
+      icon: TrendingUp,
+      change: `${ruleCount} applicable rules`,
+    },
+  ];
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat) => (
+        <Card key={stat.label}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <stat.icon className="size-5 text-primary" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="text-3xl font-bold">{stat.value}</p>
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {stat.change}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function OverviewPanels({
+  projects,
+  activeId,
+  notifications,
+  recentAlerts,
+  onSelectProject,
+}: {
+  projects: SavedProject[];
+  activeId: string;
+  notifications: ImpactNotification[];
+  recentAlerts: Alert[];
+  onSelectProject: (id: string) => void;
+}) {
+  const displayedAlerts = [
+    ...notifications.map((notification) => ({
+      id: notification.id,
+      title: notification.title,
+      project:
+        projects.find((project) => project.id === notification.projectId)
+          ?.name ?? "Current project",
+      severity: notification.urgency,
+      description: notification.message,
+      time: formatDate(notification.createdAt),
+    })),
+    ...recentAlerts.slice(0, 3).map((alert) => ({
+      id: alert.id,
+      title: alert.title,
+      project: alert.jurisdiction,
+      severity: alert.urgency,
+      description: alert.newText,
+      time: alert.publishedDate,
+    })),
+  ].slice(0, 4);
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Recent Projects</CardTitle>
+            <CardDescription>Your active compliance projects</CardDescription>
+          </div>
+          <Button variant="ghost" size="sm">
+            View All
+            <ArrowUpRight className="size-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {projects.slice(0, 4).map((project) => {
+              const isActive = project.id === activeId;
+              const fileCount =
+                project.files?.length ??
+                project.snapshot.attachedFilesProcessed?.length ??
+                0;
+
+              return (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => onSelectProject(project.id)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted/50",
+                    isActive && "bg-primary/5 ring-1 ring-primary/20",
+                  )}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="rounded-lg bg-primary/10 p-2">
+                      <FolderKanban className="size-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{project.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {project.snapshot.projectProfile.location.city} ·{" "}
+                        {fileCount} document{fileCount === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge variant={isActive ? "default" : "outline"}>
+                      {project.snapshot.riskOverview}
+                    </Badge>
+                    <span className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
+                      <Clock className="size-3" />
+                      {new Date(project.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Recent Alerts</CardTitle>
+            <CardDescription>Compliance updates requiring attention</CardDescription>
+          </div>
+          <Button variant="ghost" size="sm">
+            View All
+            <ArrowUpRight className="size-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {displayedAlerts.length > 0 ? (
+            <div className="space-y-4">
+              {displayedAlerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className="flex gap-3 rounded-lg border border-border p-3"
+                >
+                  <div
+                    className={cn(
+                      "shrink-0 rounded-lg p-2",
+                      alert.severity === "Critical"
+                        ? "bg-destructive/10"
+                        : alert.severity === "High"
+                          ? "bg-risk-high"
+                          : "bg-muted",
+                    )}
+                  >
+                    {alert.severity === "Critical" ||
+                    alert.severity === "High" ? (
+                      <AlertTriangle className="size-4 text-destructive" />
+                    ) : (
+                      <CheckCircle2 className="size-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-medium">{alert.title}</p>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {alert.time}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {alert.project}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {alert.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              No alerts yet. Seed or add laws to trigger monitoring.
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -969,7 +1220,65 @@ const STARTER_QUESTIONS = [
   "Which permits should I apply for first?",
 ];
 
-function ChatView({ profile }: { profile: ProjectProfile }) {
+function FormattedChatMessage({ content }: { content: string }) {
+  const lines = content
+    .replace(/\*\*/g, "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length <= 1) {
+    return <p>{content.replace(/\*\*/g, "")}</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {lines.map((line, index) => {
+        const isHeading = line.endsWith(":") && line.length < 40;
+        const isBullet = line.startsWith("- ");
+        const numberedMatch = line.match(/^(\d+)\.\s+(.*)$/);
+
+        if (isHeading) {
+          return (
+            <p key={index} className="font-semibold text-foreground">
+              {line}
+            </p>
+          );
+        }
+
+        if (numberedMatch) {
+          return (
+            <div key={index} className="flex gap-2">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-background text-[11px] font-semibold text-muted-foreground">
+                {numberedMatch[1]}
+              </span>
+              <p>{numberedMatch[2]}</p>
+            </div>
+          );
+        }
+
+        if (isBullet) {
+          return (
+            <div key={index} className="flex gap-2">
+              <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
+              <p>{line.slice(2)}</p>
+            </div>
+          );
+        }
+
+        return <p key={index}>{line}</p>;
+      })}
+    </div>
+  );
+}
+
+function ChatView({
+  profile,
+  projectId,
+}: {
+  profile: ProjectProfile;
+  projectId: string;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
@@ -991,7 +1300,7 @@ function ChatView({ profile }: { profile: ProjectProfile }) {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed, profile }),
+        body: JSON.stringify({ question: trimmed, profile, projectId }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = (await res.json()) as { answer?: string };
@@ -1008,7 +1317,7 @@ function ChatView({ profile }: { profile: ProjectProfile }) {
         {
           role: "assistant",
           content:
-            "Chat isn't wired up server-side yet. Add /api/chat to enable RAG answers.",
+            "I couldn't answer that yet. Check that the local API and database are running, then try again.",
         },
       ]);
     } finally {
@@ -1046,7 +1355,11 @@ function ChatView({ profile }: { profile: ProjectProfile }) {
                     : "bg-muted text-foreground",
                 )}
               >
-                {m.content}
+                {m.role === "assistant" ? (
+                  <FormattedChatMessage content={m.content} />
+                ) : (
+                  m.content
+                )}
               </div>
             </div>
           ))}

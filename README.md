@@ -35,31 +35,37 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Regulation Radar AI RAG Setup
+## Regulation Radar AI Local RAG Setup
 
 The backend RAG layer keeps storage, retrieval, and reasoning separate:
 
 User uploads document
 -> app chunks text
 -> app generates embeddings
--> chunks are stored in Firestore `documentChunks`
+-> chunks are stored in local Postgres `document_chunks`
 -> law or regulatory update is added
 -> app generates a law embedding
--> Firestore Vector Search retrieves relevant chunks
--> cosine similarity fallback runs when a vector index is unavailable
--> selected context can be passed to Gemini
+-> pgvector retrieves relevant chunks
+-> local BM25 reranking improves keyword precision
+-> selected context can be passed to OpenAI
 
-The vector database retrieves semantically relevant chunks. Gemini should only reason over those selected chunks and return structured analysis. The application is responsible for storing documents, laws, chunks, and any dashboard notifications.
+Postgres stores projects, documents, laws, document chunks, and notifications. The pgvector extension retrieves semantically relevant chunks. OpenAI should only reason over those selected chunks and return structured analysis. The application is responsible for storing documents, laws, chunks, and dashboard notifications.
+
+Start the local database:
+
+```bash
+docker compose up -d
+npm run db:init
+```
 
 Environment variables used by the RAG setup:
 
 ```bash
-GOOGLE_CLOUD_PROJECT=
-GOOGLE_CLOUD_LOCATION=us-central1
-GEMINI_API_KEY=
-FIREBASE_PROJECT_ID=
-FIREBASE_SERVICE_ACCOUNT_JSON=
-MOCK_EMBEDDINGS=false
+DATABASE_URL=postgres://permit_radar:permit_radar@localhost:5433/permit_radar
+MOCK_EMBEDDINGS=true
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_API_KEY=
 ```
 
-For local demos, set `MOCK_EMBEDDINGS=true` to use deterministic embeddings without calling Gemini.
+For local demos, keep `MOCK_EMBEDDINGS=true` to use deterministic embeddings without calling OpenAI for vectors. Add `OPENAI_API_KEY` when you want live OpenAI document analysis and impact reasoning.

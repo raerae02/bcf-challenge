@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: permit-radar-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: permit_radar
+      POSTGRES_USER: permit_radar
+      POSTGRES_PASSWORD: permit_radar
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  postgres_data:

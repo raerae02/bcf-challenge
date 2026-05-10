@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
+import { listLaws } from "@/lib/db";
 import { createStructuredLaw, type RawLawInput } from "@/lib/rag/laws";
 import { runMonitoringForLaw } from "@/lib/rag/monitoring";
-import type { ImpactUrgency, LawUpdate } from "@/lib/rag/types";
+import type { ImpactUrgency } from "@/lib/rag/types";
 
 const VALID_URGENCY = new Set(["Low", "Medium", "High", "Critical"]);
 
@@ -67,11 +67,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const snapshot = await db.collection("laws").orderBy("createdAt", "desc").get();
-    const laws: LawUpdate[] = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...(doc.data() as Omit<LawUpdate, "id">),
-    }));
+    const laws = await listLaws();
 
     return NextResponse.json({ laws });
   } catch (error) {

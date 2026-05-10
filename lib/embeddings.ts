@@ -1,8 +1,8 @@
 const MOCK_EMBEDDING_DIMENSIONS = 768;
-const DEFAULT_EMBEDDING_MODEL = "gemini-embedding-001";
+const DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small";
 
 function shouldUseMockEmbeddings() {
-  return process.env.MOCK_EMBEDDINGS === "true" || !process.env.GEMINI_API_KEY;
+  return process.env.MOCK_EMBEDDINGS === "true" || !process.env.OPENAI_API_KEY;
 }
 
 function hashText(text: string) {
@@ -63,15 +63,6 @@ export function generateMockEmbedding(text: string, dimensions = MOCK_EMBEDDING_
   return normalizeVector(vector);
 }
 
-function extractEmbeddingValues(response: unknown): number[] {
-  const result = response as {
-    embeddings?: Array<{ values?: number[] }>;
-    embedding?: { values?: number[] };
-  };
-
-  return result.embeddings?.[0]?.values || result.embedding?.values || [];
-}
-
 export async function generateEmbedding(text: string): Promise<number[]> {
   const input = text.trim();
 
@@ -84,13 +75,14 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   }
 
   try {
-    const { GoogleGenAI } = await import("@google/genai");
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const response = await ai.models.embedContent({
-      model: process.env.GEMINI_EMBEDDING_MODEL || DEFAULT_EMBEDDING_MODEL,
-      contents: input,
+    const { default: OpenAI } = await import("openai");
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const response = await client.embeddings.create({
+      model: process.env.OPENAI_EMBEDDING_MODEL || DEFAULT_EMBEDDING_MODEL,
+      input,
+      dimensions: MOCK_EMBEDDING_DIMENSIONS,
     });
-    const embedding = extractEmbeddingValues(response);
+    const embedding = response.data[0]?.embedding ?? [];
 
     if (embedding.length > 0) {
       return embedding;

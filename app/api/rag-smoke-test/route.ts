@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { chunkText } from "@/lib/chunking";
+import { insertDocument, upsertDocumentChunk, upsertProject } from "@/lib/db";
 import { generateEmbedding } from "@/lib/embeddings";
-import { db } from "@/lib/firebase-admin";
 import { findRelevantChunksForLaw } from "@/lib/vector-search";
 
 export async function GET() {
@@ -18,7 +18,24 @@ export async function GET() {
     const chunks = chunkText(sourceText);
     const embedding = await generateEmbedding(chunks[0]);
 
-    await db.collection("documentChunks").doc(chunkId).set({
+    await upsertProject({
+      id: projectId,
+      name: "Smoke Test Project",
+      location: "Montreal",
+      projectType: "Residential",
+      use: "Residential",
+      createdAt: new Date().toISOString(),
+    });
+    await insertDocument({
+      id: documentId,
+      projectId,
+      fileName: "site-plan-notes.txt",
+      type: "Site Plan",
+      text: sourceText,
+      createdAt: new Date().toISOString(),
+    });
+    await upsertDocumentChunk({
+      id: chunkId,
       projectId,
       documentId,
       fileName: "site-plan-notes.txt",

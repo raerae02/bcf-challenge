@@ -1,6 +1,6 @@
-import { db } from "@/lib/firebase-admin";
+import { newId, upsertLaw } from "@/lib/db";
 import { generateEmbedding } from "@/lib/embeddings";
-import { callGeminiJSON } from "@/lib/gemini";
+import { callAIJSON } from "@/lib/ai";
 import type {
   ImpactUrgency,
   LawUpdate,
@@ -52,22 +52,6 @@ export type RawLawInput = {
 
 function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
-}
-
-function stripUndefined<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value.map(stripUndefined) as T;
-  }
-
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value)
-        .filter(([, entry]) => entry !== undefined)
-        .map(([key, entry]) => [key, stripUndefined(entry)]),
-    ) as T;
-  }
-
-  return value;
 }
 
 function tokenizeTags(text: string) {
@@ -123,11 +107,11 @@ export function fallbackStructuredLaw(input: RawLawInput): StructuredLawUpdate {
   };
 }
 
-export async function structureLawWithGemini(
+export async function structureLawWithAI(
   input: RawLawInput,
 ): Promise<StructuredLawUpdate> {
   try {
-    return await callGeminiJSON<StructuredLawUpdate>(
+    return await callAIJSON<StructuredLawUpdate>(
       JSON.stringify(input, null, 2),
       STRUCTURE_LAW_PROMPT,
     );
@@ -161,16 +145,14 @@ export function buildStructuredLawEmbeddingText(law: StructuredLawUpdate) {
 export async function createStructuredLaw(
   input: RawLawInput,
 ): Promise<LawUpdate> {
-  const structured = await structureLawWithGemini(input);
+  const structured = await structureLawWithAI(input);
   const structuredWithSource = { ...structured, sourceUrl: input.sourceUrl };
   const embedding = await generateEmbedding(
     buildStructuredLawEmbeddingText(structuredWithSource),
   );
-  const lawRef = input.seedId
-    ? db.collection("laws").doc(input.seedId)
-    : db.collection("laws").doc();
+  const lawId = input.seedId || newId("law");
   const law: LawUpdate = {
-    id: lawRef.id,
+    id: lawId,
     seedId: input.seedId,
     title: structured.title || input.title,
     source: structured.source || input.source,
@@ -187,7 +169,7 @@ export async function createStructuredLaw(
     createdAt: new Date().toISOString(),
   };
 
-  await lawRef.set(stripUndefined(law), { merge: true });
+  await upsertLaw(law);
 
   return law;
 }

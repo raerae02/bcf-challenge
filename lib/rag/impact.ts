@@ -1,4 +1,4 @@
-import { callGeminiJSON } from "@/lib/gemini";
+import { callAIJSON } from "@/lib/ai";
 import type {
   AffectedSubclause,
   ImpactScanDraft,
@@ -189,7 +189,7 @@ function fallbackImpactAnalysis({
   };
 }
 
-export async function analyzeAffectedSubclausesWithGemini({
+export async function analyzeAffectedSubclausesWithAI({
   project,
   law,
   chunks,
@@ -201,7 +201,7 @@ export async function analyzeAffectedSubclausesWithGemini({
   const fallback = () => fallbackImpactAnalysis({ project, law, chunks });
 
   try {
-    return await callGeminiJSON<ImpactAnalysisPayload>(
+    return await callAIJSON<ImpactAnalysisPayload>(
       JSON.stringify(
         {
           project,

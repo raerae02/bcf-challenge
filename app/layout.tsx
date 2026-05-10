@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Regulation Radar AI — Smart permit and compliance monitoring",
+  title: "Permit Radar AI - Smart permit and compliance monitoring",
   description:
     "AI-powered permit, zoning, and construction compliance monitoring for small businesses in Quebec.",
 };

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callGeminiJSON, type FileInput } from "@/lib/gemini";
+import { callAIJSON, type FileInput } from "@/lib/ai";
 import { getRegulations, getAlerts } from "@/lib/data";
 import { matchRegulations, matchAlerts } from "@/lib/matcher";
 import { processFile, type ProcessedFile } from "@/lib/fileParser";
-import { db } from "@/lib/firebase-admin";
+import { upsertProject } from "@/lib/db";
 import {
   analyzeDocumentStructure,
   createDocumentWithSubclauseVectors,
@@ -106,9 +106,8 @@ async function persistProjectForUploadedDocuments({
     createdAt: new Date().toISOString(),
   };
 
-  await db.collection("projects").doc(projectId).set(
+  await upsertProject(
     profile.location.borough ? { ...project, borough: profile.location.borough } : project,
-    { merge: true },
   );
 }
 
@@ -132,7 +131,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const geminiFiles: FileInput[] = files
+    const aiFiles: FileInput[] = files
       .filter((f) => f.inlineText === null)
       .map((f) => ({
         data: f.buffer,
@@ -140,10 +139,10 @@ export async function POST(req: NextRequest) {
         filename: f.filename,
       }));
 
-    const profile = await callGeminiJSON<ProjectProfile>(
+    const profile = await callAIJSON<ProjectProfile>(
       combinedPrompt,
       EXTRACT_PROFILE_PROMPT,
-      geminiFiles,
+      aiFiles,
     );
 
     if (projectId) {
@@ -154,7 +153,7 @@ export async function POST(req: NextRequest) {
       const analyzedDocuments = await analyzeDocumentStructure({
         combinedPrompt,
         files,
-        geminiFiles,
+        aiFiles,
       });
 
       for (const [index, analyzedDocument] of analyzedDocuments.entries()) {
@@ -202,7 +201,7 @@ export async function POST(req: NextRequest) {
 
     let riskReport;
     try {
-      riskReport = await callGeminiJSON<{
+      riskReport = await callAIJSON<{
         executiveSummary: string;
         topRisks: string[];
         recommendedActions: string[];
